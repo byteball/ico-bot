@@ -8,6 +8,7 @@ const db = require('byteballcore/db');
 const desktopApp = require('byteballcore/desktop_app.js');
 
 let myAddress = null;
+conf.asset_definition.cap = conf.totalTokens;
 
 function onError(err) {
 	throw Error(err);
@@ -72,7 +73,7 @@ function defineAsset() {
 					waitForStabilityAndIssue();
 				}
 			});
-			composer.composeAssetDefinitionJoint(myAddress, conf.getAssetDefinition(), headlessWallet.signer, callbacks);
+			composer.composeAssetDefinitionJoint(myAddress, conf.asset_definition, headlessWallet.signer, callbacks);
 		}
 	);
 }
