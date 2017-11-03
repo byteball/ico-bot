@@ -107,7 +107,12 @@ eventBus.once('headless_and_rates_ready', () => {
 				return;
 			}
 
-			device.sendMessageToDevice(from_address, 'text', texts.greeting()+"\n\n"+texts.insertMyAddress());
+			var text = texts.greeting();
+			if (userInfo.byteball_address)
+				text += "\n\n"+texts.howmany();
+			else
+				text += "\n\n"+texts.insertMyAddress();
+			device.sendMessageToDevice(from_address, 'text', text);
 		});
 	});
 });
