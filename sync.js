@@ -4,6 +4,7 @@ const conf = require('byteballcore/conf');
 const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
 const headlessWallet = require('headless-byteball');
+const texts = require('./texts');
 
 
 headlessWallet.setupChatEventHandlers();
