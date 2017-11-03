@@ -72,7 +72,7 @@ function defineAsset() {
 					waitForStabilityAndIssue();
 				}
 			});
-			composer.composeAssetDefinitionJoint(myAddress, conf.asset_definition, headlessWallet.signer, callbacks);
+			composer.composeAssetDefinitionJoint(myAddress, conf.getAssetDefinition(), headlessWallet.signer, callbacks);
 		}
 	);
 }
