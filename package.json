@@ -1,7 +1,7 @@
 {
-  "name": "ico",
+  "name": "ico-bot",
   "version": "1.0.0",
-  "description": ".",
+  "description": "A bot for running ICO on Byteball platform",
   "main": "ico.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
