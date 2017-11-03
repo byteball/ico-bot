@@ -15,7 +15,7 @@ function getPrices(){
 }
 
 exports.greeting = () => {
-	return "Here you can buy "+conf.tokenName+" tokens.  The prices are:\n"+getPrices();
+	return "Here you can buy "+conf.tokenName+" tokens.  The price of 1 "+conf.tokenName+" is:\n"+getPrices();
 };
 
 exports.howmany = () => {
