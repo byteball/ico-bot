@@ -7,6 +7,9 @@ exports.bLight = false;
 
 exports.storage = 'sqlite';
 
+// TOR is recommended.  If you don't run TOR, please comment the next two lines
+exports.socksHost = '127.0.0.1';
+exports.socksPort = 9050;
 
 exports.hub = 'byteball.org/bb';
 exports.deviceName = 'ICO Bot';
