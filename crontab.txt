@@ -1,0 +1,1 @@
+*/20 * * * * cd ico-bot; node check_daemon.js 1>>~/.config/ico-bot/check_daemon.log 2>>~/.config/ico-bot/check_daemon.err
