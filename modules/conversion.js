@@ -133,9 +133,9 @@ function convertCurrencyToTokens(amountInCurrency, currency){
 	if (!objPrice)
 		throw Error('no price for '+currency);
 	let amountInPriceCurrency = amountInCurrency * getCurrencyRate(currency, objPrice.price_currency);
-	console.error('amountInPriceCurrency='+amountInPriceCurrency);
+	console.log('amountInPriceCurrency='+amountInPriceCurrency);
 	let amountInTokens = amountInPriceCurrency / objPrice.price;
-	console.error('amountInTokens='+amountInTokens);
+	console.log('amountInTokens='+amountInTokens);
 	return Math.round(amountInTokens);
 }
 
