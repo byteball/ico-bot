@@ -38,8 +38,9 @@ exports.issued_asset = null; // will be written to conf.json by scripts/issue_to
 exports.startDate = '01.11.2017'; //dd.mm.yyyy
 exports.endDate = '30.11.2017'; //dd.mm.yyyy
 exports.totalTokens = 1000000; // number of smallest units
+exports.getTotalTokens = function(){ return exports.totalTokens; }; // totalTokens can be rewritten in conf.json
 exports.asset_definition = {
-	cap: exports.totalTokens,
+	cap: exports.getTotalTokens(),
 	is_private: false,
 	is_transferrable: true,
 	auto_destroy: false,
