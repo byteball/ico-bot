@@ -1,6 +1,7 @@
 /*jslint node: true */
 'use strict';
 const moment = require('moment');
+const constants = require('byteballcore/constants.js');
 const conf = require('byteballcore/conf');
 const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
@@ -159,17 +160,26 @@ function sendMeBytes() {
 	if (network.isCatchingUp())
 		return console.log('still catching up, will not accumulate');
 	console.log('will accumulate');
-	db.query("SELECT SUM(amount) AS amount FROM my_addresses CROSS JOIN outputs USING(address) WHERE is_spent=0 AND asset IS NULL", rows => {
-		let amount = rows[0].amount - conf.minBalance;
-		if (amount < 1000) // including negative
-			return;
-		const headlessWallet = require('headless-byteball');
-		headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddress, conf.accumulationDeviceAddress, (err, unit) => {
-			if (err)
-				return notifications.notifyAdmin('accumulation failed', err);
-			console.log('accumulation done '+unit);
-		});
-	});
+	db.query(
+		"SELECT address, SUM(amount) AS amount \n\
+		FROM my_addresses CROSS JOIN outputs USING(address) JOIN units USING(unit) \n\
+		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 \n\
+		GROUP BY address ORDER BY amount DESC LIMIT ?",
+		[constants.MAX_AUTHORS_PER_UNIT],
+		rows => {
+			let amount = rows.reduce((sum, row) => sum + row.amount, 0) - conf.minBalance;
+			if (amount < 1000) // including negative
+				return console.log("nothing to accumulate");
+			const headlessWallet = require('headless-byteball');
+			headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddress, conf.accumulationDeviceAddress, (err, unit) => {
+				if (err)
+					return notifications.notifyAdmin('accumulation failed', err);
+				console.log('accumulation done '+unit);
+				if (rows.length === constants.MAX_AUTHORS_PER_UNIT)
+					sendMeBytes();
+			});
+		}
+	);
 }
 
 // for real-time only
