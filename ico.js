@@ -28,7 +28,7 @@ function sendTokensToUser(objPayment) {
 				conf.issued_asset, objPayment.tokens, objPayment.byteball_address, objPayment.device_address, 
 				(err, unit) => {
 					if (err) {
-						notifications.notifyAdmin('sendTokensToUser ICO failed', err);
+						notifications.notifyAdmin('sendTokensToUser ICO failed', err+"\n\n"+JSON.stringify(objPayment, null, '\t'));
 						return unlock();
 					}
 					db.query(
