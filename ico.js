@@ -154,16 +154,21 @@ function getUserInfo(device_address, cb) {
 // send collected bytes to the accumulation address
 function sendMeBytes() {
 	if (!conf.accumulationAddress || !conf.minBalance)
-		return;
+		return console.log('no accumulation settings');
 	let network = require('byteballcore/network.js');
 	if (network.isCatchingUp())
-		return;
+		return console.log('still catching up, will not accumulate');
+	console.log('will accumulate');
 	db.query("SELECT SUM(amount) AS amount FROM my_addresses CROSS JOIN outputs USING(address) WHERE is_spent=0 AND asset IS NULL", rows => {
 		let amount = rows[0].amount - conf.minBalance;
 		if (amount < 1000) // including negative
 			return;
 		const headlessWallet = require('headless-byteball');
-		headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddress, conf.accumulationDeviceAddress);
+		headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddress, conf.accumulationDeviceAddress, (err, unit) => {
+			if (err)
+				return notifications.notifyAdmin('accumulation failed', err);
+			console.log('accumulation done '+unit);
+		});
 	});
 }
 
