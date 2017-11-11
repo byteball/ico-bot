@@ -141,11 +141,11 @@ function convertCurrencyToTokens(amountInCurrency, currency){
 
 
 function enableRateUpdates(){
-	setInterval(updateYahooRates, 3600*1000);
+//	setInterval(updateYahooRates, 3600*1000);
 	setInterval(updateBittrexRates, 600*1000);
 }
 
-updateYahooRates();
+//updateYahooRates();
 updateBittrexRates();
 
 exports.convertCurrencyToTokens = convertCurrencyToTokens;
