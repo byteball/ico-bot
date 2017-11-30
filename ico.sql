@@ -31,3 +31,5 @@ CREATE TABLE transactions (
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address),
 	FOREIGN KEY (payout_unit) REFERENCES units(unit)
 );
+
+CREATE UNIQUE INDEX txid_index ON transactions (txid);

@@ -14,28 +14,28 @@ function onError(err) {
 	throw Error(err);
 }
 
-function updateAssetInConf(issued_asset){
-	var appDataDir = desktopApp.getAppDataDir();
-	var userConfFile = appDataDir + '/conf.json';
-	var json = require(userConfFile);
+function updateAssetInConf(issued_asset) {
+	let appDataDir = desktopApp.getAppDataDir();
+	let userConfFile = appDataDir + '/conf.json';
+	let json = require(userConfFile);
 	json.issued_asset = issued_asset;
-	fs.writeFile(userConfFile, JSON.stringify(json, null, '\t'), 'utf8', function(err){
+	fs.writeFile(userConfFile, JSON.stringify(json, null, '\t'), 'utf8', function (err) {
 		if (err)
-			throw Error('failed to write conf.json: '+err);
+			throw Error('failed to write conf.json: ' + err);
 	});
 }
 
-function checkAndIssue(){
+function checkAndIssue() {
 	if (!conf.issued_asset)
 		return defineAsset();
-	db.query("SELECT is_stable FROM assets JOIN units USING(unit) WHERE unit=?", [conf.issued_asset], function(rows){
+	db.query("SELECT is_stable FROM assets JOIN units USING(unit) WHERE unit=?", [conf.issued_asset], function (rows) {
 		if (rows.length === 0)
-			throw Error("asset "+conf.issued_asset+" not found");
-		if (rows[0].is_stable === 0){
+			throw Error("asset " + conf.issued_asset + " not found");
+		if (rows[0].is_stable === 0) {
 			console.error('==== already defined but the definition is not stable yet, will wait for stability and issue');
 			return waitForStabilityAndIssue();
 		}
-		db.query("SELECT 1 FROM outputs WHERE asset=? LIMIT 1", [conf.issued_asset], function(rows){
+		db.query("SELECT 1 FROM outputs WHERE asset=? LIMIT 1", [conf.issued_asset], function (rows) {
 			if (rows.length > 0)
 				return console.error('==== already issued');
 			issueAsset();
@@ -46,7 +46,7 @@ function checkAndIssue(){
 function defineAsset() {
 	db.query(
 		"SELECT address, SUM(amount) AS amount FROM my_addresses CROSS JOIN outputs USING(address) JOIN units USING(unit) \n\
-		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 GROUP BY address", 
+		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 GROUP BY address",
 		rows => {
 			for (let i = 0; i < rows.length; i++) {
 				if (rows[i].amount >= 2000) {
@@ -54,9 +54,9 @@ function defineAsset() {
 					break;
 				}
 			}
-			if (myAddress === null){
+			if (myAddress === null) {
 				return db.query("SELECT address FROM my_addresses LIMIT 1", rows => {
-					console.error("==== Please refill your balance to pay for the fees, your address is "+rows[0].address+", minimum balance is 3000 bytes.");
+					console.error("==== Please refill your balance to pay for the fees, your address is " + rows[0].address + ", minimum balance is 3000 bytes.");
 				});
 			}
 
@@ -78,24 +78,24 @@ function defineAsset() {
 	);
 }
 
-function issueAsset(){
+function issueAsset() {
 	const divisibleAsset = require('byteballcore/divisible_asset.js');
 	const network = require('byteballcore/network');
-	
+
 	// when issuing, we also split the asset into 100 outputs for parallel payouts
 	const COUNT_CHUNKS = 100;
-	let chunk_amount = Math.round(conf.totalTokens/COUNT_CHUNKS);
+	let chunk_amount = Math.round(conf.totalTokens / COUNT_CHUNKS);
 	let arrOutputs = [];
-	for (var i=1; i<COUNT_CHUNKS; i++) // 99 iterations
+	for (let i = 1; i < COUNT_CHUNKS; i++) // 99 iterations
 		arrOutputs.push({amount: chunk_amount, address: myAddress});
-	
+
 	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
 		asset: conf.issued_asset,
 		paying_addresses: [myAddress],
 		fee_paying_addresses: [myAddress],
 		change_address: myAddress,
-	//	to_address: myAddress,
-	//	amount: conf.totalTokens,
+		//	to_address: myAddress,
+		//	amount: conf.totalTokens,
 		asset_outputs: arrOutputs,
 		signer: headlessWallet.signer,
 		callbacks: {
@@ -109,8 +109,8 @@ function issueAsset(){
 	});
 }
 
-function waitForStabilityAndIssue(){
-	eventBus.once('my_stable-'+conf.issued_asset, issueAsset);
+function waitForStabilityAndIssue() {
+	eventBus.once('my_stable-' + conf.issued_asset, issueAsset);
 }
 
 eventBus.on('headless_wallet_ready', checkAndIssue);
