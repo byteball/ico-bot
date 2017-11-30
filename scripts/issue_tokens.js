@@ -7,6 +7,7 @@ const eventBus = require('byteballcore/event_bus.js');
 const db = require('byteballcore/db');
 const desktopApp = require('byteballcore/desktop_app.js');
 
+const MIN_BALANCE = 3000;
 let myAddress = null;
 conf.asset_definition.cap = conf.totalTokens;
 
@@ -49,14 +50,14 @@ function defineAsset() {
 		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 GROUP BY address", 
 		rows => {
 			for (let i = 0; i < rows.length; i++) {
-				if (rows[i].amount >= 2000) {
+				if (rows[i].amount >= MIN_BALANCE) {
 					myAddress = rows[i].address;
 					break;
 				}
 			}
 			if (myAddress === null){
 				return db.query("SELECT address FROM my_addresses LIMIT 1", rows => {
-					console.error("==== Please refill your balance to pay for the fees, your address is "+rows[0].address+", minimum balance is 3000 bytes.");
+					console.error("==== Please refill your balance to pay for the fees, your address is "+rows[0].address+", minimum balance is "+MIN_BALANCE+" bytes.");
 				});
 			}
 
