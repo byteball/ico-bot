@@ -8,10 +8,10 @@ exports.bLight = false;
 exports.storage = 'sqlite';
 
 // TOR is recommended.  If you don't run TOR, please comment the next two lines
-exports.socksHost = '127.0.0.1';
-exports.socksPort = 9050;
+// exports.socksHost = '127.0.0.1';
+// exports.socksPort = 9050;
 
-exports.hub = 'byteball.org/bb';
+exports.hub = 'byteball.org/bb-test';
 exports.deviceName = 'ICO Bot';
 exports.permanent_pairing_secret = '0000';
 exports.control_addresses = [''];
@@ -33,10 +33,14 @@ exports.accumulationDeviceAddress = null;
 exports.accumulationInterval = 1; // 1 hour
 exports.minBalance = 100000; //bytes
 
+// Ethereum
+exports.ethWSProvider = 'ws://localhost:8546';
+exports.ethPassword = 'test';
+
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js
 exports.startDate = '01.11.2017'; //dd.mm.yyyy
-exports.endDate = '30.11.2017'; //dd.mm.yyyy
+exports.endDate = '30.12.2017'; //dd.mm.yyyy
 exports.totalTokens = 1000000; // number of smallest units
 exports.asset_definition = {
 	cap: exports.totalTokens, // totalTokens can be rewritten in conf.json
@@ -49,7 +53,7 @@ exports.asset_definition = {
 	spender_attested: false
 };
 
-exports.tokenDisplayDecimals = 2; // display token = 100 tokens
+exports.tokenDisplayDecimals = 0; // display token = 100 tokens
 
 exports.rulesOfDistributionOfTokens = 'real-time'; // real-time OR one-time
 //exports.rulesOfDistributionOfTokens = 'one-time'; // real-time OR one-time
@@ -57,6 +61,10 @@ exports.exchangeRateDate = 'distribution'; // if (rulesOfDistributionOfTokens ==
 exports.assocPrices = {
 	GBYTE: {
 		price: 0.001,
+		price_currency: 'USD'
+	},
+	ETH: {
+		price: 1,
 		price_currency: 'USD'
 	}
 };

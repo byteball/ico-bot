@@ -29,7 +29,7 @@ eventBus.on('headless_wallet_ready', () => {
 
 		if (conf.useSmtp && (!conf.smtpUser || !conf.smtpPassword || !conf.smtpHost)) error += texts.errorSmtp();
 
-		if (!conf.admin_email || !conf.from_email) error += texts.errorEmail();
+		//if (!conf.admin_email || !conf.from_email) error += texts.errorEmail();
 
 		if (error)
 			throw new Error(error);
