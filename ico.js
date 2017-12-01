@@ -17,6 +17,8 @@ if (!conf.issued_asset)
 
 conversion.enableRateUpdates();
 
+let stableSransactions = [];
+
 function sendTokensToUser(objPayment) {
 	const mutex = require('byteballcore/mutex');
 	mutex.lock(['tx-' + objPayment.transaction_id], unlock => {
@@ -210,39 +212,44 @@ function checkTokensBalance() {
 }
 
 eventBus.on('in_transaction_stable', tx => {
-	let device = require('byteballcore/device');
-	if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
-		db.query(
-			"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
-			VALUES(?, ?,?, ?,?, ?,?, 1)",
-			[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
-			() => {
-				if (tx.device_address)
-					device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
-			}
-		);
-	}
-	else {
-		let tokens = conversion.convertCurrencyToTokens(tx.currency_amount, tx.currency); // might throw if called before the rates are ready
-		if (tokens === 0) {
-			if (tx.device_address)
-				device.sendMessageToDevice(tx.device_address, 'text', "The amount is too small to issue even 1 token, payment ignored");
-			return;
+	db.query("SELECT txid FROM transactions WHERE txid = ?", [tx.txid], rows => {
+		if ((rows.length && rows[0].stable) || stableSransactions.indexOf(tx.txid) !== -1) return;
+		stableSransactions.push(tx.txid);
+
+		let device = require('byteballcore/device');
+		if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
+			db.query(
+				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+				VALUES(?, ?,?, ?,?, ?,?, 1)",
+				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
+				() => {
+					if (tx.device_address)
+						device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+				}
+			);
 		}
-		db.query(
-			"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
-			VALUES(?, ?,?, ?,?, ?,?, 1)",
-			[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
-			(res) => {
-				tx.transaction_id = res.insertId;
-				tx.tokens = tokens;
-				if (conf.rulesOfDistributionOfTokens === 'real-time')
-					sendTokensToUser(tx);
-				else if (tx.device_address)
-					device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+		else {
+			let tokens = conversion.convertCurrencyToTokens(tx.currency_amount, tx.currency); // might throw if called before the rates are ready
+			if (tokens === 0) {
+				if (tx.device_address)
+					device.sendMessageToDevice(tx.device_address, 'text', "The amount is too small to issue even 1 token, payment ignored");
+				return;
 			}
-		);
-	}
+			db.query(
+				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+				VALUES(?, ?,?, ?,?, ?,?, 1)",
+				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
+				(res) => {
+					tx.transaction_id = res.insertId;
+					tx.tokens = tokens;
+					if (conf.rulesOfDistributionOfTokens === 'real-time')
+						sendTokensToUser(tx);
+					else if (tx.device_address)
+						device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+				}
+			);
+		}
+	})
 });
 
 eventBus.on('new_in_transaction', tx => {
