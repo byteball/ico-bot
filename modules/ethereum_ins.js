@@ -4,22 +4,12 @@ const eventBus = require('byteballcore/event_bus');
 const db = require('byteballcore/db.js');
 const conf = require('byteballcore/conf')
 const Web3 = require('web3')
-const fs = require('fs')
 
 const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
 
-let startBlock;
 let currentBlock;
-let scanComplete = false;
-try {
-	currentBlock = fs.readFileSync('./currentBlock');
-} catch (e) {
-	currentBlock = 0;
-}
 
 async function start() {
-	startBlock = await web3.eth.getBlockNumber();
-	if (currentBlock === 0) currentBlock = startBlock;
 	await web3.eth.subscribe('pendingTransactions', async (err, res) => {
 		let transaction = await web3.eth.getTransaction(res);
 		if (!transaction) return;
@@ -41,42 +31,41 @@ async function start() {
 }
 
 async function startScan() {
-	console.error('start scan')
-	db.query("SELECT byteball_address, receiving_address, device_address  \n\
+	currentBlock = await web3.eth.getBlockNumber();
+	db.query("SELECT txid FROM transactions WHERE currency = 'ETH' ORDER BY transaction_id DESC LIMIT 1", async (rows) => {
+		let stopBlockNumber;
+		if (rows.length) stopBlockNumber = (await web3.eth.getTransaction(rows[0].txid).catch(e => console.error(e))).blockNumber;
+		if (!stopBlockNumber) stopBlockNumber = currentBlock - 1000;
+		console.error('start scan')
+		db.query("SELECT byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN users USING(device_address) \n\
 			WHERE currency = 'ETH'", async (rows) => {
-		if (!rows.length) return;
-		let assocRowToAddress = {}
-		let addresses = rows.map(row => {
-			assocRowToAddress[row.receiving_address] = row;
-			return row.receiving_address;
-		});
-		for (; currentBlock < startBlock; currentBlock++) {
-			let block = await web3.eth.getBlock(currentBlock, true);
-			if (block && block.transactions && block.transactions.length) {
-				block.transactions.forEach(transaction => {
-					if (addresses.indexOf(transaction.to) !== -1) {
-						eventBus.emit('new_in_transaction', {
-							txid: transaction.hash,
-							currency_amount: transaction.value / 1e18,
-							currency: 'ETH',
-							device_address: assocRowToAddress[transaction.to].device_address,
-							byteball_address: assocRowToAddress[transaction.to].byteball_address,
-							receiving_address: assocRowToAddress[transaction.to].receiving_address
-						});
-					}
-				})
+			if (!rows.length) return;
+			let rowsByAddress = {}
+			rows.forEach(row => {
+				rowsByAddress[row.receiving_address] = row;
+			});
+			while (currentBlock-- > stopBlockNumber) {
+				let block = await web3.eth.getBlock(currentBlock, true);
+				if (block && block.transactions && block.transactions.length) {
+					block.transactions.forEach(transaction => {
+						if (rowsByAddress[transaction.to]) {
+							eventBus.emit('new_in_transaction', {
+								txid: transaction.hash,
+								currency_amount: transaction.value / 1e18,
+								currency: 'ETH',
+								device_address: rowsByAddress[transaction.to].device_address,
+								byteball_address: rowsByAddress[transaction.to].byteball_address,
+								receiving_address: rowsByAddress[transaction.to].receiving_address
+							});
+						}
+					})
+				}
 			}
-		}
-		scanComplete = true;
-	})
-	setInterval(async () => {
-		if (scanComplete) {
-			fs.writeFile('./currentBlock', await web3.eth.getBlockNumber(), () => {
-			})
-		}
-	}, 30000)
+			console.error('stop scan')
+		})
+	});
 }
 
 start().catch(e => console.error(e))
