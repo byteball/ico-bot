@@ -150,19 +150,19 @@ function getCurrencyRateOfETH(currency) {
 		return ETH_BTC_rate;
 	}
 	if (currency === 'USD') {
-		if (!ETH_BTC_rate || !ETH_USD_rate)
-			throw Error("no GBYTE_BTC_rate || ETH_USD_rate");
-		return ETH_BTC_rate * ETH_USD_rate;
+		if (!ETH_USD_rate)
+			throw Error("no || ETH_USD_rate");
+		return ETH_USD_rate;
 	}
 	if (currency === 'EUR') {
-		if (!ETH_BTC_rate || !ETH_USD_rate || !EUR_USD_rate)
-			throw Error("no GBYTE_BTC_rate || ETH_USD_rate || EUR_USD_rate");
-		return ETH_BTC_rate * ETH_USD_rate / EUR_USD_rate;
+		if (!ETH_USD_rate || !EUR_USD_rate)
+			throw Error("no ETH_USD_rate || EUR_USD_rate");
+		return ETH_USD_rate / EUR_USD_rate;
 	}
 	if (currency === 'RUR') {
-		if (!ETH_BTC_rate || !ETH_USD_rate || !USD_RUR_rate)
-			throw Error("no GBYTE_BTC_rate || ETH_USD_rate || USD_RUR_rate");
-		return ETH_BTC_rate * ETH_USD_rate * USD_RUR_rate;
+		if (!ETH_USD_rate || !USD_RUR_rate)
+			throw Error("no ETH_USD_rate || USD_RUR_rate");
+		return ETH_USD_rate * USD_RUR_rate;
 	}
 	throw Error('unknown currency: ' + currency);
 }

@@ -18,7 +18,7 @@ function readMainAddress(onDone){
 
 eventBus.on('my_transactions_became_stable', arrUnits => {
 	db.query(
-		"SELECT byteball_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
+		"SELECT byteball_address, ethereum_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
 		FROM outputs \n\
 		JOIN receiving_addresses ON receiving_addresses.receiving_address = outputs.address \n\
 		JOIN users USING(device_address) \n\
@@ -33,6 +33,7 @@ eventBus.on('my_transactions_became_stable', arrUnits => {
 					currency_amount: row.amount/1e9,
 					currency: 'GBYTE',
 					byteball_address: row.byteball_address,
+					ethereum_address: row.ethereum_address,
 					device_address: row.device_address,
 					receiving_address: row.receiving_address
 				});
