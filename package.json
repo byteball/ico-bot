@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "async": "^2.5.0",
+    "bignumber.js": "^5.0.0",
     "byteballcore": "git+https://github.com/byteball/byteballcore.git",
     "emailjs": "^1.0.10",
     "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",

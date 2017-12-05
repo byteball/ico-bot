@@ -3,23 +3,37 @@
 const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
 const split = require('../modules/split.js');
+const async = require('async');
+const conf = require('byteballcore/conf');
+const Web3 = require('web3');
+const headlessWallet = require('headless-byteball');
 
+if(conf.ethEnabled)
+	const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
 
-function run(){
-	async.series([splitOutputs, readStaticChangeAddress, refund], () => {
-		console.error('==== Finished');
+let change_address;
+
+function run() {
+	async.series([splitOutputs, readStaticChangeAddress, refundByteball], (err) => {
+		if (err) return console.error(err);
+		console.error('==== Byteball Finished');
 	});
+
+	if (conf.ethEnabled) {
+		refundEthereum().then(() => {
+			console.error('==== Ethereum Finished');
+		}).catch(e => console.error(e))
+	}
 }
 
-function splitOutputs(onDone){
+function splitOutputs(onDone) {
 	split.checkAndSplitLargestOutput(null, err => {
-		if (err)
-			throw Error('split bytes failed: '+err);
+		if (err) return onDone('split bytes failed: ' + err);
 		onDone();
 	});
 }
 
-function readStaticChangeAddress(onDone){
+function readStaticChangeAddress(onDone) {
 	const headlessWallet = require('headless-byteball');
 	headlessWallet.issueOrSelectStaticChangeAddress(address => {
 		change_address = address;
@@ -27,7 +41,7 @@ function readStaticChangeAddress(onDone){
 	});
 }
 
-function refund(onDone) {
+function refundByteball(onDone) {
 	const headlessWallet = require('headless-byteball');
 	const walletGeneral = require('byteballcore/wallet_general.js');
 	db.query(
@@ -36,9 +50,9 @@ function refund(onDone) {
 		LEFT JOIN outputs ON byteball_address=address AND ROUND(currency_amount*1e9)=outputs.amount AND asset IS NULL \n\
 		LEFT JOIN unit_authors USING(unit) \n\
 		LEFT JOIN my_addresses ON unit_authors.address=my_addresses.address \n\
-		WHERE my_addresses.address IS NULL AND refunded=0 AND currency='GBYTE'", 
+		WHERE my_addresses.address IS NULL AND refunded=0 AND currency='GBYTE'",
 		rows => {
-			if (!rows.length){
+			if (!rows.length) {
 				console.error('==== nothing to refund');
 				return onDone();
 			}
@@ -49,14 +63,14 @@ function refund(onDone) {
 				arrRowSets,
 				(rows, cb) => {
 					let outputs = rows.map(row => {
-						return {amount: Math.round(row.currency_amount*1e9), address: row.byteball_address};
+						return {amount: Math.round(row.currency_amount * 1e9), address: row.byteball_address};
 					});
 					headlessWallet.sendPaymentUsingOutputs(null, outputs, change_address, (err, unit) => {
 						if (err)
-							throw Error('sendPaymentUsingOutputs failed: '+err);
+							throw Error('sendPaymentUsingOutputs failed: ' + err);
 						let arrTransactionIds = rows.map(row => row.transaction_id);
 						db.query(
-							"UPDATE transactions SET refunded=1, refund_date = " + db.getNow() + ", refund_unit=? WHERE transaction_id IN(?)", 
+							"UPDATE transactions SET refunded=1, refund_date = " + db.getNow() + ", refund_txid=? WHERE transaction_id IN(?)",
 							[unit, arrTransactionIds],
 							() => {
 								rows.forEach(row => {
@@ -74,6 +88,36 @@ function refund(onDone) {
 	);
 }
 
+function refundEthereum() {
+	return new Promise((resolve, reject) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) as amount, ethereum_address, receiving_address FROM transactions WHERE currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
+			if (!rows.length) {
+				console.error('==== Ethereum nothing to refund');
+				return resolve();
+			}
+			console.error('==== start Ethereum refund');
+			await web3.eth.personal.unlockAccount(conf.ethRefundAddress, conf.ethPassword, 10000000);
+			return async.each(rows, (row, callback) => {
+				web3.eth.sendTransaction({
+					from: conf.ethRefundAddress,
+					to: row.ethereum_address,
+					value: Web3.utils.toWei(row.amount.toString(), 'ether'),
+					gas: 21000
+				}, (err, txid) => {
+					if (err) return callback(err);
+					db.query("UPDATE transactions SET refunded=1, refund_date = " + db.getNow() + ", refund_txid=? WHERE receiving_address = ?",
+						[txid, row.receiving_address],
+						() => {
+							return callback();
+						})
+				});
+			}, (err) => {
+				if (err) return reject(err);
+				return resolve();
+			});
+		});
+	});
+}
 
 
 eventBus.on('headless_wallet_ready', run);
