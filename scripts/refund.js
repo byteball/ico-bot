@@ -14,13 +14,13 @@ if(conf.ethEnabled)
 let change_address;
 
 function run() {
-	async.series([splitOutputs, readStaticChangeAddress, refundByteball], (err) => {
+	async.series([splitOutputs, readStaticChangeAddress, refundBytes], (err) => {
 		if (err) return console.error(err);
 		console.error('==== Byteball Finished');
 	});
 
 	if (conf.ethEnabled) {
-		refundEthereum().then(() => {
+		refundEther().then(() => {
 			console.error('==== Ethereum Finished');
 		}).catch(e => console.error(e))
 	}
@@ -41,7 +41,7 @@ function readStaticChangeAddress(onDone) {
 	});
 }
 
-function refundByteball(onDone) {
+function refundBytes(onDone) {
 	const headlessWallet = require('headless-byteball');
 	const walletGeneral = require('byteballcore/wallet_general.js');
 	db.query(
@@ -88,9 +88,9 @@ function refundByteball(onDone) {
 	);
 }
 
-function refundEthereum() {
+function refundEther() {
 	return new Promise((resolve, reject) => {
-		db.query("SELECT transaction_id, SUM(currency_amount) as amount, ethereum_address, receiving_address FROM transactions WHERE currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) AS amount, users.ethereum_address, receiving_address FROM transactions JOIN users USING(device_address) WHERE currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
 				console.error('==== Ethereum nothing to refund');
 				return resolve();
