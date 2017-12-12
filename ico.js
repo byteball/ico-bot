@@ -14,15 +14,18 @@ const conversion = require('./modules/conversion.js');
 const Web3 = require('web3')
 const BigNumber = require('bignumber.js');
 
+let web3
+
 if (!conf.issued_asset)
 	throw Error("please isssue the asset first by running scripts/issue_tokens.js");
 
-if (conf.ethEnabled)
-	const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+if (conf.ethEnabled) {
+	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+}
 
 conversion.enableRateUpdates();
 
-let stableSransactions = [];
+let stableTransactions = [];
 
 function sendTokensToUser(objPayment) {
 	const mutex = require('byteballcore/mutex');
@@ -252,14 +255,14 @@ function checkTokensBalance() {
 eventBus.on('in_transaction_stable', tx => {
 	let device = require('byteballcore/device');
 	db.query("SELECT txid FROM transactions WHERE txid = ?", [tx.txid], rows => {
-		if ((rows.length && rows[0].stable) || stableSransactions.indexOf(tx.txid) !== -1) return;
-		stableSransactions.push(tx.txid);
+		if ((rows.length && rows[0].stable) || stableTransactions.indexOf(tx.txid) !== -1) return;
+		stableTransactions.push(tx.txid);
 
 		if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
 			db.query(
-				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, ethereum_address, device_address, currency_amount, tokens, stable) \n\
-				VALUES(?, ?,?, ?,?,?, ?,?, 1)",
-				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.ethereum_address, tx.device_address, tx.currency_amount, null],
+				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+				VALUES(?, ?,?, ?,?,?,?, 1)",
+				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
 				() => {
 					if (tx.device_address)
 						device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
@@ -274,9 +277,9 @@ eventBus.on('in_transaction_stable', tx => {
 				return;
 			}
 			db.query(
-				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, ethereum_address, device_address, currency_amount, tokens, stable) \n\
-				VALUES(?, ?,?, ?,?,?, ?,?, 1)",
-				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.ethereum_address, tx.device_address, tx.currency_amount, tokens],
+				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+				VALUES(?, ?,?, ?,?,?,?, 1)",
+				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
 				(res) => {
 					tx.transaction_id = res.insertId;
 					tx.tokens = tokens;
@@ -302,9 +305,9 @@ eventBus.on('new_in_transaction', tx => {
 			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = 'ETH'", [tx.txid], (rows) => {
 				if (rows.length) return;
 				db.query(
-					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, ethereum_address, device_address, currency_amount, tokens) \n\
-					VALUES(?, ?,?, ?,?,?, ?,?)",
-					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.ethereum_address, tx.device_address, tx.currency_amount, null], () => {
+					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens) \n\
+					VALUES(?, ?,?, ?,?,?,?)",
+					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
 						if (!userInfo.ethereum_address) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
 					});

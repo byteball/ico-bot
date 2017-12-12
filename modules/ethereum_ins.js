@@ -4,9 +4,11 @@ const eventBus = require('byteballcore/event_bus');
 const db = require('byteballcore/db.js');
 const conf = require('byteballcore/conf');
 const Web3 = require('web3');
+let web3;
 
-if (conf.ethEnabled)
-	const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+if (conf.ethEnabled) {
+	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+}
 
 let currentBlock;
 
@@ -14,7 +16,7 @@ async function start() {
 	await web3.eth.subscribe('pendingTransactions', async (err, res) => {
 		let transaction = await web3.eth.getTransaction(res);
 		if (!transaction) return;
-		db.query("SELECT byteball_address, ethereum_address, receiving_address, device_address  \n\
+		db.query("SELECT byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN users USING(device_address) \n\
 			WHERE receiving_address = ?", [transaction.to], rows => {
@@ -25,7 +27,6 @@ async function start() {
 				currency: 'ETH',
 				device_address: rows[0].device_address,
 				byteball_address: rows[0].byteball_address,
-				ethereum_address: rows[0].ethereum_address,
 				receiving_address: rows[0].receiving_address
 			});
 		})
@@ -40,7 +41,7 @@ async function startScan() {
 		if (!stopBlockNumber) stopBlockNumber = currentBlock - 1000;
 		if (stopBlockNumber <= 0) stopBlockNumber = 1;
 		console.error('start scan')
-		db.query("SELECT byteball_address, ethereum_address, receiving_address, device_address  \n\
+		db.query("SELECT byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN users USING(device_address) \n\
 			WHERE currency = 'ETH'", async (rows) => {
@@ -60,7 +61,6 @@ async function startScan() {
 								currency: 'ETH',
 								device_address: rowsByAddress[transaction.to].device_address,
 								byteball_address: rowsByAddress[transaction.to].byteball_address,
-								ethereum_address: rowsByAddress[transaction.to].ethereum_address,
 								receiving_address: rowsByAddress[transaction.to].receiving_address
 							});
 						}
@@ -84,7 +84,6 @@ if (conf.ethEnabled) {
 						currency_amount: row.currency_amount,
 						currency: 'ETH',
 						byteball_address: row.byteball_address,
-						ethereum_address: row.ethereum_address,
 						device_address: row.device_address,
 						receiving_address: row.receiving_address
 					});

@@ -1,6 +1,7 @@
 CREATE TABLE users (
 	device_address CHAR(33) NOT NULL PRIMARY KEY,
 	byteball_address CHAR(32),
+	ethereum_address CHAR(44),
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
 );
 
