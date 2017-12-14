@@ -23,7 +23,7 @@ eventBus.on('text', (from_address, text) => {
 
 eventBus.on('headless_wallet_ready', () => {
 	let error = '';
-	let arrTableNames = ['users', 'receiving_addresses', 'transactions'];
+	let arrTableNames = ['assoc_refund_addresses', 'receiving_addresses', 'transactions'];
 	db.query("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?)", [arrTableNames], (rows) => {
 		if (rows.length !== arrTableNames.length) error += texts.errorInitSql();
 

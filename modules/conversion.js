@@ -109,15 +109,17 @@ function updateBittrexRates() {
 }
 
 function getCurrencyRate(currency1, currency2) {
-	if (currency1 === 'ETH')
-		return getCurrencyRateOfETH(currency2) / getCurrencyRateOfETH(currency1);
-	else
-		return getCurrencyRateOfGB(currency2) / getCurrencyRateOfGB(currency1);
+	return getCurrencyRateOfGB(currency2) / getCurrencyRateOfGB(currency1);
 }
 
 function getCurrencyRateOfGB(currency) {
 	if (currency === 'GBYTE')
 		return 1;
+
+	if (currency === 'ETH') {
+		return GBYTE_BTC_rate /  ETH_BTC_rate;
+	}
+
 	if (currency === 'BTC') {
 		if (!GBYTE_BTC_rate)
 			throw Error("no GBYTE_BTC_rate");
@@ -137,32 +139,6 @@ function getCurrencyRateOfGB(currency) {
 		if (!GBYTE_BTC_rate || !BTC_USD_rate || !USD_RUR_rate)
 			throw Error("no GBYTE_BTC_rate || BTC_USD_rate || USD_RUR_rate");
 		return GBYTE_BTC_rate * BTC_USD_rate * USD_RUR_rate;
-	}
-	throw Error('unknown currency: ' + currency);
-}
-
-function getCurrencyRateOfETH(currency) {
-	if (currency === 'ETH')
-		return 1;
-	if (currency === 'BTC') {
-		if (!ETH_BTC_rate)
-			throw Error("no ETH_BTC_rate");
-		return ETH_BTC_rate;
-	}
-	if (currency === 'USD') {
-		if (!ETH_USD_rate)
-			throw Error("no || ETH_USD_rate");
-		return ETH_USD_rate;
-	}
-	if (currency === 'EUR') {
-		if (!ETH_USD_rate || !EUR_USD_rate)
-			throw Error("no ETH_USD_rate || EUR_USD_rate");
-		return ETH_USD_rate / EUR_USD_rate;
-	}
-	if (currency === 'RUR') {
-		if (!ETH_USD_rate || !USD_RUR_rate)
-			throw Error("no ETH_USD_rate || USD_RUR_rate");
-		return ETH_USD_rate * USD_RUR_rate;
 	}
 	throw Error('unknown currency: ' + currency);
 }

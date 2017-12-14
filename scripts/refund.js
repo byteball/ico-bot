@@ -90,7 +90,7 @@ function refundBytes(onDone) {
 
 function refundEther() {
 	return new Promise((resolve, reject) => {
-		db.query("SELECT transaction_id, SUM(currency_amount) AS amount, users.ethereum_address, receiving_address FROM transactions JOIN users USING(device_address) WHERE currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) AS amount, assoc_refund_addresses.address, receiving_address FROM transactions JOIN assoc_refund_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
 				console.error('==== Ethereum nothing to refund');
 				return resolve();
