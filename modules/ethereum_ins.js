@@ -5,6 +5,8 @@ const db = require('byteballcore/db.js');
 const conf = require('byteballcore/conf');
 const Web3 = require('web3');
 let web3;
+let needRescan = false;
+let rescan = false;
 
 if (conf.ethEnabled) {
 	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
@@ -16,9 +18,9 @@ async function start() {
 	await web3.eth.subscribe('pendingTransactions', async (err, res) => {
 		let transaction = await web3.eth.getTransaction(res);
 		if (!transaction) return;
-		db.query("SELECT byteball_address, receiving_address, device_address  \n\
+		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
-			JOIN users USING(device_address) \n\
+			JOIN assoc_refund_addresses USING(device_address) \n\
 			WHERE receiving_address = ?", [transaction.to], rows => {
 			if (!rows.length) return;
 			eventBus.emit('new_in_transaction', {
@@ -37,14 +39,14 @@ async function startScan() {
 	currentBlock = await web3.eth.getBlockNumber();
 	db.query("SELECT txid FROM transactions WHERE currency = 'ETH' ORDER BY transaction_id DESC LIMIT 1", async (rows) => {
 		let stopBlockNumber;
-		if (rows.length) stopBlockNumber = (await web3.eth.getTransaction(rows[0].txid).catch(e => console.error(e))).blockNumber;
+		if (rows.length) stopBlockNumber = (await web3.eth.getTransaction(rows[0].txid).catch(e => console.error(e))).blockNumber - 2;
 		if (!stopBlockNumber) stopBlockNumber = currentBlock - 1000;
 		if (stopBlockNumber <= 0) stopBlockNumber = 1;
 		console.error('start scan')
-		db.query("SELECT byteball_address, receiving_address, device_address  \n\
+		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
-			JOIN users USING(device_address) \n\
-			WHERE currency = 'ETH'", async (rows) => {
+			JOIN assoc_refund_addresses USING(device_address) \n\
+			WHERE receiving_addresses.currency = 'ETH' AND assoc_refund_addresses.currency = 'BYTES'", async (rows) => {
 			if (!rows.length) return;
 			let rowsByAddress = {}
 			rows.forEach(row => {
@@ -68,6 +70,7 @@ async function startScan() {
 				}
 			}
 			console.error('stop scan')
+			return true;
 		})
 	});
 }
@@ -75,10 +78,11 @@ async function startScan() {
 if (conf.ethEnabled) {
 	start().catch(e => console.error(e));
 	setInterval(async () => {
+		let lastBlockNumber = await web3.eth.getBlockNumber()
 		db.query("SELECT * FROM transactions WHERE currency = 'ETH' AND stable = 0", (rows) => {
 			rows.forEach(async (row) => {
 				let stableTx = await web3.eth.getTransactionReceipt(row.txid);
-				if (stableTx) {
+				if (stableTx && (lastBlockNumber - stableTx.blockNumber) >= conf.minConfirmations) {
 					eventBus.emit('in_transaction_stable', {
 						txid: row.txid,
 						currency_amount: row.currency_amount,
@@ -92,6 +96,21 @@ if (conf.ethEnabled) {
 		});
 	}, 10000);
 }
+
+setInterval(async () => {
+	if (needRescan) {
+		if (!(await web3.eth.isSyncing()) && !rescan) {
+			rescan = true;
+			await startScan().catch(e => {console.error(e)});
+			rescan = false;
+			needRescan = false;
+		}
+	}else{
+		if(await web3.eth.isSyncing()){
+			needRescan = true;
+		}
+	}
+}, 60000);
 
 exports.startScan = startScan;
 

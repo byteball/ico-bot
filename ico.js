@@ -60,8 +60,8 @@ function sendTokensToUser(objPayment) {
 eventBus.on('paired', from_address => {
 	let device = require('byteballcore/device.js');
 	var text = texts.greeting();
-	getUserInfo(from_address, userInfo => {
-		if (userInfo.byteball_address)
+	checkRefundAdress(from_address, 'BYTES', checkBytes => {
+		if (checkBytes)
 			text += "\n\n" + texts.howmany();
 		else
 			text += "\n\n" + texts.insertMyAddress();
@@ -81,16 +81,16 @@ eventBus.once('headless_and_rates_ready', () => {
 		if (moment() > moment(conf.endDate, 'DD.MM.YYYY hh:mm'))
 			return device.sendMessageToDevice(from_address, 'text', 'The ICO is already over.');
 
-		getUserInfo(from_address, userInfo => {
-			if (!userInfo.byteball_address && !validationUtils.isValidAddress(ucText)) {
+		checkRefundAdress(from_address, 'BYTES', checkBytes => {
+			if (!checkBytes && !validationUtils.isValidAddress(ucText)) {
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			} else if (validationUtils.isValidAddress(ucText)) {
-				db.query('UPDATE users SET byteball_address = ? WHERE device_address = ?', [ucText, from_address], () => {
+				db.query('INSERT OR REPLACE INTO assoc_refund_addresses (device_address, currency, address) VALUES(?,?,?)', [from_address, 'BYTES', ucText], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address.\n\n' + texts.howmany());
 				});
 				return;
 			} else if (Web3.utils.isAddress(ucText)) {
-				db.query('UPDATE users SET ethereum_address = ? WHERE device_address = ?', [ucText, from_address], () => {
+				db.query('INSERT OR REPLACE INTO assoc_refund_addresses (device_address, currency, address) VALUES(?,?,?)', [from_address, 'ETH', ucText], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.\n\n' + texts.howmany());
 				});
 				return;
@@ -113,8 +113,8 @@ eventBus.once('headless_and_rates_ready', () => {
 								'\n[' + ucText + '](byteball:' + receiving_address + '?amount=' + bytes + ')');
 						});
 						break;
-					case 'BTC':
 					case 'ETH':
+					case 'ETHER':
 						tokens = conversion.convertCurrencyToTokens(amount, 'ETH')
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
@@ -127,6 +127,7 @@ eventBus.once('headless_and_rates_ready', () => {
 					case 'USDT':
 						device.sendMessageToDevice(from_address, 'text', currency + ' not implemented yet');
 						break;
+					case 'BTC':
 					default:
 						device.sendMessageToDevice(from_address, 'text', 'Currency is not supported');
 						break;
@@ -135,7 +136,7 @@ eventBus.once('headless_and_rates_ready', () => {
 			}
 
 			var text = texts.greeting();
-			if (userInfo.byteball_address)
+			if (checkBytes)
 				text += "\n\n" + texts.howmany();
 			else
 				text += "\n\n" + texts.insertMyAddress();
@@ -163,18 +164,12 @@ function checkAndPayNotPaidTransactions() {
 }
 
 
-function getUserInfo(device_address, cb) {
-	db.query("SELECT * FROM users WHERE device_address = ?", [device_address], rows => {
+function checkRefundAdress(device_address, currency, cb) {
+	db.query("SELECT address FROM assoc_refund_addresses WHERE device_address = ? AND currency = ?", [device_address, currency.toUpperCase()], rows => {
 		if (rows.length) {
-			cb(rows[0]);
+			cb(true)
 		} else {
-			db.query("INSERT " + db.getIgnore() + " INTO users (device_address, byteball_address) VALUES(?,?)", [device_address, null], () => {
-				cb({
-					device_address: device_address,
-					byteball_address: null,
-					ethereum_address: null
-				});
-			});
+			cb(false)
 		}
 	});
 }
@@ -209,7 +204,7 @@ function sendMeBytes() {
 	);
 }
 
-async function sendMeEthereum() {
+async function sendMeEther() {
 	if (!conf.ethAccumulationAddress)
 		return console.log('Ethereum no accumulation settings');
 	let accounts = await web3.eth.getAccounts();
@@ -254,54 +249,59 @@ function checkTokensBalance() {
 
 eventBus.on('in_transaction_stable', tx => {
 	let device = require('byteballcore/device');
-	db.query("SELECT txid FROM transactions WHERE txid = ?", [tx.txid], rows => {
-		if ((rows.length && rows[0].stable) || stableTransactions.indexOf(tx.txid) !== -1) return;
-		stableTransactions.push(tx.txid);
+	const mutex = require('byteballcore/mutex');
+	mutex.lock(['tx-' + tx.txid], unlock => {
+		db.query("SELECT txid FROM transactions WHERE txid = ?", [tx.txid], rows => {
+			if ((rows.length && rows[0].stable)) return;
 
-		if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
-			db.query(
-				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
-				VALUES(?, ?,?, ?,?,?,?, 1)",
-				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
-				() => {
-					if (tx.device_address)
-						device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
-				}
-			);
-		}
-		else {
-			let tokens = conversion.convertCurrencyToTokens(tx.currency_amount, tx.currency); // might throw if called before the rates are ready
-			if (tokens === 0) {
-				if (tx.device_address)
-					device.sendMessageToDevice(tx.device_address, 'text', "The amount is too small to issue even 1 token, payment ignored");
-				return;
+			if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
+				db.query(
+					"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+					VALUES(?, ?,?, ?,?,?,?, 1)",
+					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
+					() => {
+						unlock();
+						if (tx.device_address)
+							device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+					}
+				);
 			}
-			db.query(
-				"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
-				VALUES(?, ?,?, ?,?,?,?, 1)",
-				[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
-				(res) => {
-					tx.transaction_id = res.insertId;
-					tx.tokens = tokens;
-					if (conf.rulesOfDistributionOfTokens === 'real-time')
-						sendTokensToUser(tx);
-					else if (tx.device_address)
-						device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+			else {
+				let tokens = conversion.convertCurrencyToTokens(tx.currency_amount, tx.currency); // might throw if called before the rates are ready
+				if (tokens === 0) {
+					unlock();
+					if (tx.device_address)
+						device.sendMessageToDevice(tx.device_address, 'text', "The amount is too small to issue even 1 token, payment ignored");
+					return;
 				}
-			);
+				db.query(
+					"INSERT OR REPLACE INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+					VALUES(?, ?,?, ?,?,?,?, 1)",
+					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
+					(res) => {
+						unlock();
+						tx.transaction_id = res.insertId;
+						tx.tokens = tokens;
+						if (conf.rulesOfDistributionOfTokens === 'real-time')
+							sendTokensToUser(tx);
+						else if (tx.device_address)
+							device.sendMessageToDevice(tx.device_address, 'text', texts.paymentConfirmed());
+					}
+				);
+			}
+		});
+		if (tx.currency === 'ETH') {
+			checkRefundAdress(tx.device_address, 'ETH', checkEthAddress => {
+				if (!checkEthAddress) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
+			});
 		}
 	});
-	if (tx.currency === 'ETH') {
-		getUserInfo(tx.device_address, userInfo => {
-			if (!userInfo.ethereum_address) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
-		});
-	}
 });
 
 eventBus.on('new_in_transaction', tx => {
 	let device = require('byteballcore/device.js');
 	if (tx.currency === 'ETH') {
-		getUserInfo(tx.device_address, userInfo => {
+		checkRefundAdress(tx.device_address, 'ETH', checkEthAddress => {
 			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = 'ETH'", [tx.txid], (rows) => {
 				if (rows.length) return;
 				db.query(
@@ -309,7 +309,7 @@ eventBus.on('new_in_transaction', tx => {
 					VALUES(?, ?,?, ?,?,?,?)",
 					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
-						if (!userInfo.ethereum_address) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
+						if (!checkEthAddress) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
 					});
 			})
 		});
@@ -321,7 +321,7 @@ eventBus.on('new_in_transaction', tx => {
 
 eventBus.on('headless_wallet_ready', () => {
 	let error = '';
-	let arrTableNames = ['users', 'receiving_addresses', 'transactions'];
+	let arrTableNames = ['assoc_refund_addresses', 'receiving_addresses', 'transactions'];
 	db.query("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?)", [arrTableNames], (rows) => {
 		if (rows.length !== arrTableNames.length) error += texts.errorInitSql();
 
@@ -337,8 +337,8 @@ eventBus.on('headless_wallet_ready', () => {
 
 		if (conf.ethEnabled) {
 			ethereum_ins.startScan();
-			setTimeout(sendMeEthereum, 60 * 1000);
-			setInterval(sendMeEthereum, conf.ethAccumulationInterval * 3600 * 1000);
+			setTimeout(sendMeEther, 60 * 1000);
+			setInterval(sendMeEther, conf.ethAccumulationInterval * 3600 * 1000);
 		}
 
 		if (conf.rulesOfDistributionOfTokens === 'real-time') {

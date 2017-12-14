@@ -40,6 +40,7 @@ exports.ethPassword = 'test';
 exports.ethAccumulationAddress = '';
 exports.ethAccumulationInterval = 1; // 1 hour
 exports.ethRefundAddress = '';
+exports.minConfirmations = 6;
 
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js
