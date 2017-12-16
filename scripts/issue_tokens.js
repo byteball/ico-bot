@@ -29,7 +29,7 @@ function updateAssetInConf(issued_asset){
 function checkAndIssue(){
 	db.query(
 		"SELECT address, SUM(amount) AS amount FROM my_addresses CROSS JOIN outputs USING(address) JOIN units USING(unit) \n\
-		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 GROUP BY address", 
+		WHERE is_spent=0 AND asset IS NULL AND is_stable=1 GROUP BY address",
 		rows => {
 			for (let i = 0; i < rows.length; i++) {
 				if (rows[i].amount >= MIN_BALANCE) {
@@ -82,14 +82,14 @@ function defineAsset() {
 function issueAsset(){
 	const divisibleAsset = require('byteballcore/divisible_asset.js');
 	const network = require('byteballcore/network');
-	
+
 	// when issuing, we also split the asset into 100 outputs for parallel payouts
 	const COUNT_CHUNKS = 100;
 	let chunk_amount = Math.round(conf.totalTokens/COUNT_CHUNKS);
 	let arrOutputs = [];
 	for (var i=1; i<COUNT_CHUNKS; i++) // 99 iterations
 		arrOutputs.push({amount: chunk_amount, address: myAddress});
-	
+
 	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
 		asset: conf.issued_asset,
 		paying_addresses: [myAddress],

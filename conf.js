@@ -33,10 +33,19 @@ exports.accumulationDeviceAddress = null;
 exports.accumulationInterval = 1; // 1 hour
 exports.minBalance = 100000; //bytes
 
+// Ethereum
+exports.ethEnabled = true;
+exports.ethWSProvider = 'ws://localhost:8546';
+exports.ethPassword = 'test';
+exports.ethAccumulationAddress = '';
+exports.ethAccumulationInterval = 1; // 1 hour
+exports.ethRefundAddress = '';
+exports.minConfirmations = 6;
+
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js
-exports.startDate = '01.11.2017'; //dd.mm.yyyy
-exports.endDate = '30.11.2017'; //dd.mm.yyyy
+exports.startDate = '02.12.2017 13:00'; //dd.mm.yyyy
+exports.endDate = '30.12.2017 13:00'; //dd.mm.yyyy
 exports.totalTokens = 1000000; // number of smallest units
 exports.asset_definition = {
 	cap: exports.totalTokens, // totalTokens can be rewritten in conf.json
@@ -57,6 +66,10 @@ exports.exchangeRateDate = 'distribution'; // if (rulesOfDistributionOfTokens ==
 exports.assocPrices = {
 	GBYTE: {
 		price: 0.001,
+		price_currency: 'USD'
+	},
+	ETH: {
+		price: 1,
 		price_currency: 'USD'
 	}
 };

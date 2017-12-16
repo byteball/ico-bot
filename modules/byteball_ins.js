@@ -18,10 +18,10 @@ function readMainAddress(onDone){
 
 eventBus.on('my_transactions_became_stable', arrUnits => {
 	db.query(
-		"SELECT byteball_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
+		"SELECT user_addresses.address as byteball_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
 		FROM outputs \n\
 		JOIN receiving_addresses ON receiving_addresses.receiving_address = outputs.address \n\
-		JOIN users USING(device_address) \n\
+		JOIN user_addresses USING(device_address) \n\
 		WHERE unit IN(?) AND asset IS NULL \n\
 			AND NOT EXISTS (SELECT 1 FROM unit_authors CROSS JOIN my_addresses USING(address) WHERE unit_authors.unit=outputs.unit)", 
 		[arrUnits], 
