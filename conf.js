@@ -8,10 +8,10 @@ exports.bLight = false;
 exports.storage = 'sqlite';
 
 // TOR is recommended.  If you don't run TOR, please comment the next two lines
-// exports.socksHost = '127.0.0.1';
-// exports.socksPort = 9050;
+exports.socksHost = '127.0.0.1';
+exports.socksPort = 9050;
 
-exports.hub = 'byteball.org/bb-test';
+exports.hub = 'byteball.org/bb';
 exports.deviceName = 'ICO Bot';
 exports.permanent_pairing_secret = '0000';
 exports.control_addresses = [''];
@@ -58,7 +58,7 @@ exports.asset_definition = {
 	spender_attested: false
 };
 
-exports.tokenDisplayDecimals = 0; // display token = 100 tokens
+exports.tokenDisplayDecimals = 2; // display token = 100 tokens
 
 exports.rulesOfDistributionOfTokens = 'real-time'; // real-time OR one-time
 //exports.rulesOfDistributionOfTokens = 'one-time'; // real-time OR one-time

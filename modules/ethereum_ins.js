@@ -20,7 +20,7 @@ async function start() {
 		if (!transaction) return;
 		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
-			JOIN assoc_refund_addresses USING(device_address) \n\
+			JOIN user_addresses USING(device_address) \n\
 			WHERE receiving_address = ?", [transaction.to], rows => {
 			if (!rows.length) return;
 			eventBus.emit('new_in_transaction', {
@@ -45,8 +45,8 @@ async function startScan() {
 		console.error('start scan')
 		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
-			JOIN assoc_refund_addresses USING(device_address) \n\
-			WHERE receiving_addresses.currency = 'ETH' AND assoc_refund_addresses.currency = 'BYTES'", async (rows) => {
+			JOIN user_addresses USING(device_address) \n\
+			WHERE receiving_addresses.currency = 'ETH' AND user_addresses.platform = 'Byteball'", async (rows) => {
 			if (!rows.length) return;
 			let rowsByAddress = {}
 			rows.forEach(row => {

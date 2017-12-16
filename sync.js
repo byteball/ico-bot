@@ -23,13 +23,13 @@ eventBus.on('text', (from_address, text) => {
 
 eventBus.on('headless_wallet_ready', () => {
 	let error = '';
-	let arrTableNames = ['assoc_refund_addresses', 'receiving_addresses', 'transactions'];
+	let arrTableNames = ['user_addresses', 'receiving_addresses', 'transactions'];
 	db.query("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?)", [arrTableNames], (rows) => {
 		if (rows.length !== arrTableNames.length) error += texts.errorInitSql();
 
 		if (conf.useSmtp && (!conf.smtpUser || !conf.smtpPassword || !conf.smtpHost)) error += texts.errorSmtp();
 
-		//if (!conf.admin_email || !conf.from_email) error += texts.errorEmail();
+		if (!conf.admin_email || !conf.from_email) error += texts.errorEmail();
 
 		if (error)
 			throw new Error(error);
