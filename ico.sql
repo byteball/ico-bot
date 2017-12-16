@@ -6,11 +6,11 @@ CREATE TABLE receiving_addresses (
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
 );
 
-CREATE TABLE assoc_refund_addresses (
+CREATE TABLE user_addresses (
 	 device_address CHAR(33) NOT NULL,
-	 currency CHAR(20) NOT NULL,
+	 platform CHAR(50) NOT NULL,
 	 address CHAR(100) NOT NULL,
-	PRIMARY KEY(device_address,currency)
+	PRIMARY KEY(device_address,platform)
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
 );
 
