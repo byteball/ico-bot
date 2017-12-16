@@ -58,7 +58,7 @@ function sendTokensToUser(objPayment) {
 eventBus.on('paired', from_address => {
 	let device = require('byteballcore/device.js');
 	var text = texts.greeting();
-	checkRefundAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
+	checkUserAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
 		if (bByteballAddressKnown)
 			text += "\n\n" + texts.howmany();
 		else
@@ -79,7 +79,7 @@ eventBus.once('headless_and_rates_ready', () => {
 		if (moment() > moment(conf.endDate, 'DD.MM.YYYY hh:mm'))
 			return device.sendMessageToDevice(from_address, 'text', 'The ICO is already over.');
 
-		checkRefundAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
+		checkUserAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
 			if (!bByteballAddressKnown && !validationUtils.isValidAddress(ucText)) {
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			} else if (validationUtils.isValidAddress(ucText)) {
@@ -162,7 +162,7 @@ function checkAndPayNotPaidTransactions() {
 }
 
 
-function checkRefundAdress(device_address, platform, cb) {
+function checkUserAdress(device_address, platform, cb) {
 	db.query("SELECT address FROM user_addresses WHERE device_address = ? AND platform = ?", [device_address, platform.toUpperCase()], rows => {
 		if (rows.length) {
 			cb(true)
@@ -291,7 +291,7 @@ eventBus.on('in_transaction_stable', tx => {
 			}
 		});
 		if (tx.currency === 'ETH') {
-			checkRefundAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
+			checkUserAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
 				if (!bEthereumAddressKnown) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
 			});
 		}
@@ -301,7 +301,7 @@ eventBus.on('in_transaction_stable', tx => {
 eventBus.on('new_in_transaction', tx => {
 	let device = require('byteballcore/device.js');
 	if (tx.currency === 'ETH') {
-		checkRefundAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
+		checkUserAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
 			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = 'ETH'", [tx.txid], (rows) => {
 				if (rows.length) return;
 				db.query(
