@@ -6,7 +6,7 @@ const conf = require('byteballcore/conf');
 const Web3 = require('web3');
 let web3;
 let needRescan = false;
-let rescan = false;
+let scanned = false;
 
 if (conf.ethEnabled) {
 	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
@@ -99,10 +99,10 @@ if (conf.ethEnabled) {
 
 setInterval(async () => {
 	if (needRescan) {
-		if (!(await web3.eth.isSyncing()) && !rescan) {
-			rescan = true;
+		if (!(await web3.eth.isSyncing()) && !scanned) {
+			scanned = true;
 			await startScan().catch(e => {console.error(e)});
-			rescan = false;
+			scanned = false;
 			needRescan = false;
 		}
 	}else{
