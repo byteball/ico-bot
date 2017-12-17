@@ -174,7 +174,7 @@ function checkUserAdress(device_address, platform, cb) {
 
 // send collected bytes to the accumulation address
 function sendMeBytes() {
-	if (!conf.accumulationAddress || !conf.minBalance)
+	if (!conf.accumulationAddresses.GBYTE || !conf.minBalance)
 		return console.log('Byteball no accumulation settings');
 	let network = require('byteballcore/network.js');
 	if (network.isCatchingUp())
@@ -191,7 +191,7 @@ function sendMeBytes() {
 			if (amount < 1000) // including negative
 				return console.log("nothing to accumulate");
 			const headlessWallet = require('headless-byteball');
-			headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddress, conf.accumulationDeviceAddress, (err, unit) => {
+			headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddresses.GBYTE, conf.accumulationDeviceAddress, (err, unit) => {
 				if (err)
 					return notifications.notifyAdmin('accumulation failed', err);
 				console.log('accumulation done ' + unit);
@@ -203,7 +203,7 @@ function sendMeBytes() {
 }
 
 async function sendMeEther() {
-	if (!conf.ethAccumulationAddress)
+	if (!conf.accumulationAddresses.ETH)
 		return console.log('Ethereum no accumulation settings');
 	let accounts = await web3.eth.getAccounts();
 	let gasPrice = await web3.eth.getGasPrice();
@@ -211,14 +211,14 @@ async function sendMeEther() {
 	let fee = new BigNumber(21000).times(gasPrice);
 
 	accounts.forEach(async (account) => {
-		if (account !== conf.ethAccumulationAddress) {
+		if (account !== conf.accumulationAddresses.ETH) {
 			let balance = new BigNumber(await web3.eth.getBalance(account));
 			console.error('balance', account, balance, typeof balance);
 			if (balance.greaterThan(0) && balance.minus(fee).greaterThan(0)) {
 				await web3.eth.personal.unlockAccount(account, conf.ethPassword);
 				web3.eth.sendTransaction({
 					from: account,
-					to: conf.ethAccumulationAddress,
+					to: conf.accumulationAddresses.ETH,
 					value: balance.minus(fee),
 					gas: 21000
 				}, (err, txid) => {

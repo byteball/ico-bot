@@ -28,7 +28,10 @@ exports.admin_email = '';
 exports.from_email = '';
 
 // accumulation settings: the bot will periodically forward all collected funds to accumulationAddress (which is supposed to have better security, e.g. multisig)
-exports.accumulationAddress = '';
+exports.accumulationAddresses = {
+	GBYTE: '',
+	ETH: ''
+};
 exports.accumulationDeviceAddress = null;
 exports.accumulationInterval = 1; // 1 hour
 exports.minBalance = 100000; //bytes
@@ -37,7 +40,6 @@ exports.minBalance = 100000; //bytes
 exports.ethEnabled = true;
 exports.ethWSProvider = 'ws://localhost:8546';
 exports.ethPassword = 'test';
-exports.ethAccumulationAddress = '';
 exports.ethAccumulationInterval = 1; // 1 hour
 exports.ethRefundAddress = '';
 exports.minConfirmations = 6;
@@ -69,7 +71,7 @@ exports.assocPrices = {
 		price_currency: 'USD'
 	},
 	ETH: {
-		price: 1,
+		price: 0.001,
 		price_currency: 'USD'
 	}
 };
