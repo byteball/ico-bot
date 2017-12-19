@@ -42,7 +42,7 @@ exports.ethWSProvider = 'ws://localhost:8546';
 exports.ethPassword = 'test';
 exports.ethAccumulationInterval = 1; // 1 hour
 exports.ethRefundAddress = '';
-exports.minConfirmations = 6;
+exports.ethMinConfirmations = 20;
 
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js

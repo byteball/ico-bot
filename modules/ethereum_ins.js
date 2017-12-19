@@ -82,7 +82,7 @@ if (conf.ethEnabled) {
 		db.query("SELECT * FROM transactions WHERE currency = 'ETH' AND stable = 0", (rows) => {
 			rows.forEach(async (row) => {
 				let stableTx = await web3.eth.getTransactionReceipt(row.txid);
-				if (stableTx && (lastBlockNumber - stableTx.blockNumber) >= conf.minConfirmations) {
+				if (stableTx && (lastBlockNumber - stableTx.blockNumber) >= conf.ethMinConfirmations) {
 					eventBus.emit('in_transaction_stable', {
 						txid: row.txid,
 						currency_amount: row.currency_amount,
