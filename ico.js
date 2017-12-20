@@ -119,7 +119,7 @@ eventBus.once('headless_and_rates_ready', () => {
 						display_tokens = tokens / conversion.displayTokensMultiplier;
 						ethereum_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
 							device.sendMessageToDevice(from_address, 'text', 'You buy: ' + display_tokens + ' ' + conf.tokenName +
-								'\n - ' + receiving_address);
+								'\nPlease send '+amount+' ETH to ' + receiving_address);
 						})
 						break;
 					case 'USDT':
@@ -147,13 +147,14 @@ function checkAndPayNotPaidTransactions() {
 	let network = require('byteballcore/network.js');
 	if (network.isCatchingUp())
 		return;
+	console.log('checkAndPayNotPaidTransactions');
 	db.query(
 		"SELECT transactions.* \n\
 		FROM transactions \n\
 		LEFT JOIN outputs ON byteball_address=outputs.address AND tokens=outputs.amount AND asset=? \n\
 		LEFT JOIN unit_authors USING(unit) \n\
 		LEFT JOIN my_addresses ON unit_authors.address=my_addresses.address \n\
-		WHERE my_addresses.address IS NULL AND paid_out=0",
+		WHERE my_addresses.address IS NULL AND paid_out=0 AND stable=1",
 		[conf.issued_asset],
 		rows => {
 			rows.forEach(sendTokensToUser);
@@ -222,7 +223,7 @@ async function sendMeEther() {
 					value: balance.minus(fee),
 					gas: 21000
 				}, (err, txid) => {
-					if (err) return console.error('not sent ethereum', account, err);
+					if (err) return console.error('not sent ether', account, err);
 				});
 			}
 		}
@@ -292,7 +293,8 @@ eventBus.on('in_transaction_stable', tx => {
 		});
 		if (tx.currency === 'ETH') {
 			checkUserAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
-				if (!bEthereumAddressKnown) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
+				if (!bEthereumAddressKnown && conf.bRefundPossible)
+					device.sendMessageToDevice(tx.device_address, 'text', texts.sendEthereumAddressForRefund());
 			});
 		}
 	});
@@ -309,7 +311,8 @@ eventBus.on('new_in_transaction', tx => {
 					VALUES(?, ?,?, ?,?,?,?)",
 					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
-						if (!bEthereumAddressKnown) device.sendMessageToDevice(tx.device_address, 'text', "Please send me your ethereum address");
+						if (!bEthereumAddressKnown && conf.bRefundPossible)
+							device.sendMessageToDevice(tx.device_address, 'text', texts.sendEthereumAddressForRefund());
 					});
 			})
 		});

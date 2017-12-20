@@ -19,7 +19,7 @@ exports.greeting = () => {
 };
 
 exports.howmany = () => {
-	return 'How many GB are you willing to invest?\nFor example: 1.5GB';
+	return 'How much and what currency are you willing to invest?\nFor example: 1.5GB, or 2.5ETH';
 };
 
 exports.insertMyAddress = () => {
@@ -28,6 +28,10 @@ exports.insertMyAddress = () => {
 
 exports.paymentConfirmed = () => {
 	return 'The payment is confirmed, you will receive your tokens at the time of distribution.';
+};
+
+exports.sendEthereumAddressForRefund = () => {
+	return "Please send me your Ethereum address in case we need to make a refund.";
 };
 
 //errors

@@ -75,3 +75,5 @@ exports.assocPrices = {
 		price_currency: 'USD'
 	}
 };
+
+exports.bRefundPossible = true;

@@ -16,13 +16,15 @@ let currentBlock;
 
 async function start() {
 	await web3.eth.subscribe('pendingTransactions', async (err, res) => {
+		console.log("===== new eth tx", err, res);
 		let transaction = await web3.eth.getTransaction(res);
-		if (!transaction) return;
-		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
+		console.log("===== transaction", transaction);
+		if (!transaction) return console.log("no transaction");
+		db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN user_addresses USING(device_address) \n\
-			WHERE receiving_address = ?", [transaction.to], rows => {
-			if (!rows.length) return;
+			WHERE receiving_address = ? AND receiving_addresses.currency='ETH' AND user_addresses.platform='BYTEBALL'", [transaction.to], rows => {
+			if (!rows.length) return console.log("no user found by address "+transaction.to);
 			eventBus.emit('new_in_transaction', {
 				txid: res,
 				currency_amount: transaction.value / 1e18,
@@ -43,11 +45,12 @@ async function startScan() {
 		if (!stopBlockNumber) stopBlockNumber = currentBlock - 1000;
 		if (stopBlockNumber <= 0) stopBlockNumber = 1;
 		console.error('start scan')
-		db.query("SELECT address as byteball_address, receiving_address, device_address  \n\
+		db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN user_addresses USING(device_address) \n\
-			WHERE receiving_addresses.currency = 'ETH' AND user_addresses.platform = 'Byteball'", async (rows) => {
-			if (!rows.length) return;
+			WHERE receiving_addresses.currency = 'ETH' AND user_addresses.platform = 'BYTEBALL'", async (rows) => {
+			if (!rows.length) 
+				return console.log('ETH nothing to scan for');
 			let rowsByAddress = {}
 			rows.forEach(row => {
 				rowsByAddress[row.receiving_address] = row;
@@ -57,6 +60,7 @@ async function startScan() {
 				if (block && block.transactions && block.transactions.length) {
 					block.transactions.forEach(transaction => {
 						if (rowsByAddress[transaction.to]) {
+							console.log('==== scan found a transaction', transaction);
 							eventBus.emit('new_in_transaction', {
 								txid: transaction.hash,
 								currency_amount: transaction.value / 1e18,
@@ -82,7 +86,9 @@ if (conf.ethEnabled) {
 		db.query("SELECT * FROM transactions WHERE currency = 'ETH' AND stable = 0", (rows) => {
 			rows.forEach(async (row) => {
 				let stableTx = await web3.eth.getTransactionReceipt(row.txid);
+				console.log('checking for stability of', stableTx);
 				if (stableTx && (lastBlockNumber - stableTx.blockNumber) >= conf.ethMinConfirmations) {
+					console.log('tx is stable');
 					eventBus.emit('in_transaction_stable', {
 						txid: row.txid,
 						currency_amount: row.currency_amount,
