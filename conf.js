@@ -41,7 +41,7 @@ exports.ethEnabled = true;
 exports.ethWSProvider = 'ws://localhost:8546';
 exports.ethPassword = 'test';
 exports.ethAccumulationInterval = 1; // 1 hour
-exports.ethRefundAddress = '';
+exports.ethRefundDistributionAddress = '';
 exports.ethMinConfirmations = 20;
 
 exports.tokenName = 'ICOTKN';

@@ -96,10 +96,10 @@ function refundEther() {
 				return resolve();
 			}
 			console.error('==== start Ethereum refund');
-			await web3.eth.personal.unlockAccount(conf.ethRefundAddress, conf.ethPassword, 10000000);
+			await web3.eth.personal.unlockAccount(conf.ethRefundDistributionAddress, conf.ethPassword, 10000000);
 			return async.each(rows, (row, callback) => {
 				web3.eth.sendTransaction({
-					from: conf.ethRefundAddress,
+					from: conf.ethRefundDistributionAddress,
 					to: row.ethereum_address,
 					value: Web3.utils.toWei(row.amount.toString(), 'ether'),
 					gas: 21000
