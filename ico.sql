@@ -47,7 +47,7 @@ ALTER TABLE transactions ADD COLUMN stable TINYINT DEFAULT 0;
 CREATE TABLE user_addresses (
 	device_address CHAR(33) NOT NULL,
 	platform CHAR(50) NOT NULL,
-	address CHAR(100) NOT NULL,
+	address CHAR(100)  NULL,
 	creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY(device_address,platform),
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
