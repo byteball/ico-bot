@@ -89,7 +89,7 @@ eventBus.once('headless_and_rates_ready', () => {
 				return;
 			} else if (Web3.utils.isAddress(ucText)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', ucText], () => {
-					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.';
+					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.');
 				});
 				return;
 			} else if (/^[0-9.]+[\sA-Z]+$/.test(ucText)) {
