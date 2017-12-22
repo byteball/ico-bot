@@ -89,7 +89,7 @@ eventBus.once('headless_and_rates_ready', () => {
 				return;
 			} else if (Web3.utils.isAddress(ucText)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', ucText], () => {
-					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.\n\n' + texts.howmany());
+					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.';
 				});
 				return;
 			} else if (/^[0-9.]+[\sA-Z]+$/.test(ucText)) {
@@ -250,7 +250,9 @@ eventBus.on('in_transaction_stable', tx => {
 	let device = require('byteballcore/device');
 	const mutex = require('byteballcore/mutex');
 	mutex.lock(['tx-' + tx.txid], unlock => {
-		db.query("SELECT txid FROM transactions WHERE txid = ?", [tx.txid], rows => {
+		db.query("SELECT stable FROM transactions WHERE txid = ? AND receiving_address=?", [tx.txid, tx.receiving_address], rows => {
+			if (rows.length > 1)
+				throw Error("non unique");
 			if ((rows.length && rows[0].stable)) return;
 			let queryOrReplace = '';
 			if (tx.currency === 'ETH') queryOrReplace = 'OR REPLACE';

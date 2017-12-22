@@ -18,7 +18,7 @@ CREATE TABLE user_addresses (
 
 CREATE TABLE transactions (
 	transaction_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	txid VARCHAR(100) NOT NULL UNIQUE, -- id of receiving tx on the receiving currency
+	txid VARCHAR(100) NOT NULL, -- id of receiving tx on the receiving currency
 	receiving_address VARCHAR(100) NOT NULL, -- our receiving address in input currency
 	currency VARCHAR(10) NOT NULL, -- GBYTE, BTC, ETH, USDT
 	byteball_address CHAR(32) NOT NULL, -- user's byteball address that will receive new tokens (out address)
@@ -37,10 +37,11 @@ CREATE TABLE transactions (
 	FOREIGN KEY (payout_unit) REFERENCES units(unit)
 );
 CREATE INDEX txid_stable ON transactions (stable);
+CREATE UNIQUE INDEX txid_index ON transactions (txid, receiving_address);
 
 /*
 upgrade:
-CREATE UNIQUE INDEX txid_index ON transactions (txid);
+CREATE UNIQUE INDEX txid_index ON transactions (txid, receiving_address);
 CREATE INDEX txid_stable ON transactions (stable);
 ALTER TABLE transactions ADD COLUMN stable TINYINT DEFAULT 0;
 -- ALTER TABLE receiving_addresses ADD COLUMN creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
