@@ -10,11 +10,18 @@ const validationUtils = require('byteballcore/validation_utils');
 const notifications = require('./modules/notifications');
 const byteball_ins = require('./modules/byteball_ins');
 const ethereum_ins = require('./modules/ethereum_ins');
+const bitcoin_ins = require('./modules/bitcoin_ins');
+const bitcoinClient = require('./modules/bitcoin_client.js');
+const bitcoinApi = require('./modules/bitcoin_api.js');
 const conversion = require('./modules/conversion.js');
 const Web3 = require('web3')
 const BigNumber = require('bignumber.js');
+const bitcore = require('bitcore-lib');
 
 let web3;
+
+const bTestnet = constants.version.match(/t$/);
+const bitcoinNetwork = bTestnet ? bitcore.Networks.testnet : bitcore.Networks.livenet;
 
 if (!conf.issued_asset)
 	throw Error("please isssue the asset first by running scripts/issue_tokens.js");
@@ -72,7 +79,9 @@ eventBus.once('headless_and_rates_ready', () => {
 	headlessWallet.setupChatEventHandlers();
 	eventBus.on('text', (from_address, text) => {
 		let device = require('byteballcore/device');
-		let ucText = text.toUpperCase().trim();
+		text = text.trim();
+		let ucText = text.toUpperCase();
+		let lcText = text.toLowerCase();
 
 		if (moment() < moment(conf.startDate, 'DD.MM.YYYY hh:mm'))
 			return device.sendMessageToDevice(from_address, 'text', 'The ICO has not begun yet.');
@@ -87,9 +96,14 @@ eventBus.once('headless_and_rates_ready', () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address.\n\n' + texts.howmany());
 				});
 				return;
-			} else if (Web3.utils.isAddress(ucText)) {
-				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', ucText], () => {
+			} else if (Web3.utils.isAddress(lcText)) {
+				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', lcText], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.');
+				});
+				return;
+			} else if (bitcore.Address.isValid(text, bitcoinNetwork)) {
+				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'BITCOIN', text], () => {
+					device.sendMessageToDevice(from_address, 'text', 'Saved your Bitcoin address.');
 				});
 				return;
 			} else if (/^[0-9.]+[\sA-Z]+$/.test(ucText)) {
@@ -111,21 +125,23 @@ eventBus.once('headless_and_rates_ready', () => {
 								'\n[' + ucText + '](byteball:' + receiving_address + '?amount=' + bytes + ')');
 						});
 						break;
-					case 'ETH':
 					case 'ETHER':
-						tokens = conversion.convertCurrencyToTokens(amount, 'ETH')
+						currency = 'ETH';
+					case 'ETH':
+					case 'BTC':
+						tokens = conversion.convertCurrencyToTokens(amount, currency);
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
 						display_tokens = tokens / conversion.displayTokensMultiplier;
-						ethereum_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
+						let currency_ins = (currency === 'BTC') ? bitcoin_ins : ethereum_ins;
+						currency_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
 							device.sendMessageToDevice(from_address, 'text', 'You buy: ' + display_tokens + ' ' + conf.tokenName +
-								'\nPlease send '+amount+' ETH to ' + receiving_address);
+								'\nPlease send '+amount+' '+currency+' to ' + receiving_address);
 						})
 						break;
 					case 'USDT':
 						device.sendMessageToDevice(from_address, 'text', currency + ' not implemented yet');
 						break;
-					case 'BTC':
 					default:
 						device.sendMessageToDevice(from_address, 'text', 'Currency is not supported');
 						break;
@@ -133,12 +149,12 @@ eventBus.once('headless_and_rates_ready', () => {
 				return;
 			}
 
-			var text = texts.greeting();
+			let response = texts.greeting();
 			if (bByteballAddressKnown)
-				text += "\n\n" + texts.howmany();
+				response += "\n\n" + texts.howmany();
 			else
-				text += "\n\n" + texts.insertMyAddress();
-			device.sendMessageToDevice(from_address, 'text', text);
+				response += "\n\n" + texts.insertMyAddress();
+			device.sendMessageToDevice(from_address, 'text', response);
 		});
 	});
 });
@@ -203,6 +219,22 @@ function sendMeBytes() {
 	);
 }
 
+function sendMeBtc() {
+	if (!conf.accumulationAddresses.BTC)
+		return console.log('BTC: no accumulation settings');
+	console.log('will accumulate BTC');
+	bitcoinApi.getBtcBalance(conf.btcMinConfirmations, (err, balance) => {
+		if (err)
+			return console.log("skipping BTC accumulation as getBtcBalance failed: "+err);
+		if (balance < 0.5)
+			return console.log("skipping BTC accumulation as balance is only "+balance+" BTC");
+		let amount = balance - 0.01;
+		bitcoinClient.sendToAddress(conf.accumulationAddresses.BTC, amount, (err, txid) => {
+			console.log('BTC accumulation: amount '+amount+', txid '+txid+', err '+err);
+		});
+	});
+}
+
 async function sendMeEther() {
 	if (!conf.accumulationAddresses.ETH)
 		return console.log('Ethereum no accumulation settings');
@@ -246,6 +278,15 @@ function checkTokensBalance() {
 	);
 }
 
+function getPlatformByCurrency(currency){
+	switch(currency){
+		case 'ETH': return 'ETHEREUM';
+		case 'BTC': return 'BITCOIN';
+		case 'GBYTE': return 'BYTEBALL';
+		default: throw Error("unknown currency: "+currency);
+	}
+}
+
 eventBus.on('in_transaction_stable', tx => {
 	let device = require('byteballcore/device');
 	const mutex = require('byteballcore/mutex');
@@ -253,13 +294,12 @@ eventBus.on('in_transaction_stable', tx => {
 		db.query("SELECT stable FROM transactions WHERE txid = ? AND receiving_address=?", [tx.txid, tx.receiving_address], rows => {
 			if (rows.length > 1)
 				throw Error("non unique");
-			if ((rows.length && rows[0].stable)) return;
-			let queryOrReplace = '';
-			if (tx.currency === 'ETH') queryOrReplace = 'OR REPLACE';
+			if (rows.length && rows[0].stable) return;
+			let orReplace = (tx.currency === 'ETH' || tx.currency === 'BTC') ? 'OR REPLACE' : '';
 
 			if (conf.rulesOfDistributionOfTokens === 'one-time' && conf.exchangeRateDate === 'distribution') {
 				db.query(
-					"INSERT " + queryOrReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+					"INSERT " + orReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
 					VALUES(?, ?,?, ?,?,?,?, 1)",
 					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
 					() => {
@@ -278,7 +318,7 @@ eventBus.on('in_transaction_stable', tx => {
 					return;
 				}
 				db.query(
-					"INSERT " + queryOrReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
+					"INSERT " + orReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
 					VALUES(?, ?,?, ?,?,?,?, 1)",
 					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
 					(res) => {
@@ -293,10 +333,11 @@ eventBus.on('in_transaction_stable', tx => {
 				);
 			}
 		});
-		if (tx.currency === 'ETH') {
-			checkUserAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
-				if (!bEthereumAddressKnown && conf.bRefundPossible)
-					device.sendMessageToDevice(tx.device_address, 'text', texts.sendEthereumAddressForRefund());
+		if (tx.currency === 'ETH' || tx.currency === 'BTC') {
+			let platform = getPlatformByCurrency(tx.currency);
+			checkUserAdress(tx.device_address, platform, bAddressKnown => {
+				if (!bAddressKnown && conf.bRefundPossible)
+					device.sendMessageToDevice(tx.device_address, 'text', texts.sendAddressForRefund(platform));
 			});
 		}
 	});
@@ -304,17 +345,18 @@ eventBus.on('in_transaction_stable', tx => {
 
 eventBus.on('new_in_transaction', tx => {
 	let device = require('byteballcore/device.js');
-	if (tx.currency === 'ETH') {
-		checkUserAdress(tx.device_address, 'ETHEREUM', bEthereumAddressKnown => {
-			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = 'ETH'", [tx.txid], (rows) => {
+	if (tx.currency === 'ETH' || tx.currency === 'BTC') {
+		let platform = getPlatformByCurrency(tx.currency);
+		checkUserAdress(tx.device_address, platform, bAddressKnown => {
+			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = ?", [tx.txid, tx.currency], (rows) => {
 				if (rows.length) return;
 				db.query(
 					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens) \n\
 					VALUES(?, ?,?, ?,?,?,?)",
 					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
-						if (!bEthereumAddressKnown && conf.bRefundPossible)
-							device.sendMessageToDevice(tx.device_address, 'text', texts.sendEthereumAddressForRefund());
+						if (!bAddressKnown && conf.bRefundPossible)
+							device.sendMessageToDevice(tx.device_address, 'text', texts.sendAddressForRefund(platform));
 					});
 			})
 		});
@@ -344,6 +386,11 @@ eventBus.on('headless_wallet_ready', () => {
 			ethereum_ins.startScan();
 			setTimeout(sendMeEther, 60 * 1000);
 			setInterval(sendMeEther, conf.ethAccumulationInterval * 3600 * 1000);
+		}
+
+		if (conf.btcEnabled) {
+			setTimeout(sendMeBtc, 60 * 1000);
+			setInterval(sendMeBtc, conf.btcAccumulationInterval * 3600 * 1000);
 		}
 
 		if (conf.rulesOfDistributionOfTokens === 'real-time') {

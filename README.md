@@ -1,6 +1,6 @@
 # ICO Bot
 
-This bot allows to run an ICO on Byteball network.  It accepts Bytes and Ether (also BTC in the future) from users and sends back the new tokens in exchange.  You set the prices relative to USD or other fiat or crypto currencies. 
+This bot allows to run an ICO on Byteball network.  It accepts Bytes, BTC, and Ether from users and sends back the new tokens in exchange.  You set the prices relative to USD or other fiat or crypto currencies. 
 
 ## Install
 
@@ -54,11 +54,25 @@ If you chose one-time distribution (rather than sending tokens back to users imm
 node run_one_time_distribution.js
 ```
 
+## Bitcoin
+
+### Install
+
+Install Bitcoin Core https://bitcoin.org/en/full-node#linux-instructions
+
+To save space, it is recommended to run it in pruning mode.  Edit your `~/.bitcoin/bitcoin.conf` and add the line `prune=550`.  The Bitcoin node will take only 5Gb disk space.
+
+Set `rpcuser` and `rpcpassword` in your `bitcoin.conf` the same as in the conf (`conf.js` or `conf.json`) of this bot.
+
+### Start
+```
+bitcoind -daemon
+```
+
 ## Ethereum
 
 ### Install
-1) Install [geth](https://github.com/ethereum/go-ethereum/wiki/Installing-Geth#install-on-macos-via-homebrew)
-
+Install [geth](https://github.com/ethereum/go-ethereum/wiki/Installing-Geth#install-on-ubuntu-via-ppas)
 
 ### Start
 Start dev node
@@ -73,5 +87,5 @@ $ geth --testnet --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" -
 
 Start Main network node
 ```bash
-$ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024
+$ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode fast
 ```

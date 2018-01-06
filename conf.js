@@ -44,6 +44,14 @@ exports.ethAccumulationInterval = 1; // 1 hour
 exports.ethRefundDistributionAddress = '';
 exports.ethMinConfirmations = 20;
 
+// Bitcoin
+exports.btcEnabled = true;
+exports.btcRpcUser = 'bitcoin';
+exports.btcRpcPassword = 'local321';
+exports.btcAccumulationInterval = 1; // 1 hour
+exports.btcRefundDistributionAddress = '';
+exports.btcMinConfirmations = 2;
+
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js
 exports.startDate = '02.12.2017 13:00'; //dd.mm.yyyy

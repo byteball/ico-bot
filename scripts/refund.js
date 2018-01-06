@@ -6,7 +6,10 @@ const split = require('../modules/split.js');
 const async = require('async');
 const conf = require('byteballcore/conf');
 const Web3 = require('web3');
+const bitcoinClient = require('../modules/bitcoin_client.js');
 const headlessWallet = require('headless-byteball');
+
+const MAX_BTC_OUTPUTS_PER_PAYMENT_MESSAGE = 100;
 
 if(conf.ethEnabled)
 	const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
@@ -53,7 +56,7 @@ function refundBytes(onDone) {
 		WHERE my_addresses.address IS NULL AND refunded=0 AND currency='GBYTE'",
 		rows => {
 			if (!rows.length) {
-				console.error('==== nothing to refund');
+				console.error('==== GBYTE nothing to refund');
 				return onDone();
 			}
 			let arrRowSets = [];
@@ -89,10 +92,11 @@ function refundBytes(onDone) {
 }
 
 function refundEther() {
+	const device = require('byteballcore/device.js');
 	return new Promise((resolve, reject) => {
-		db.query("SELECT transaction_id, SUM(currency_amount) AS amount, user_addresses.address, receiving_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
-				console.error('==== Ethereum nothing to refund');
+				console.error('==== ETH nothing to refund');
 				return resolve();
 			}
 			console.error('==== start Ethereum refund');
@@ -100,14 +104,16 @@ function refundEther() {
 			return async.each(rows, (row, callback) => {
 				web3.eth.sendTransaction({
 					from: conf.ethRefundDistributionAddress,
-					to: row.ethereum_address,
-					value: Web3.utils.toWei(row.amount.toString(), 'ether'),
+					to: row.address,
+					value: Web3.utils.toWei(row.currency_amount.toString(), 'ether'),
 					gas: 21000
 				}, (err, txid) => {
 					if (err) return callback(err);
 					db.query("UPDATE transactions SET refunded=1, refund_date = " + db.getNow() + ", refund_txid=? WHERE receiving_address = ?",
 						[txid, row.receiving_address],
 						() => {
+							if (row.device_address)
+								device.sendMessageToDevice(row.device_address, 'text', "Refunded "+row.currency_amount+" ETH");
 							return callback();
 						})
 				});
@@ -118,6 +124,53 @@ function refundEther() {
 		});
 	});
 }
+
+function refundBtc(onDone) {
+	const device = require('byteballcore/device.js');
+	db.query(
+		"SELECT transaction_id, currency_amount, user_addresses.address, device_address \n\
+		FROM transactions JOIN user_addresses USING(device_address) \n\
+		WHERE transactions.currency = 'BTC' AND refunded = 0 AND stable = 1",
+		rows => {
+			if (!rows.length) {
+				console.error('==== BTC nothing to refund');
+				return onDone();
+			}
+			let arrRowSets = [];
+			while (rows.length > 0)
+				arrRowSets.push(rows.splice(0, MAX_BTC_OUTPUTS_PER_PAYMENT_MESSAGE));
+			async.eachSeries(
+				arrRowSets,
+				(rows, cb) => {
+					let outputs = {};
+					rows.forEach(row => {
+						outputs[row.address] = row.currency_amount;
+					});
+					console.log("refunding to "+JSON.stringify(outputs));
+					bitcoinClient.sendMany("", outputs, (err, txid) => {
+						console.log('BTC refund to '+JSON.stringify(outputs)+': txid '+txid+', err '+err);
+						if (err)
+							throw Error('BTC refund to '+JSON.stringify(outputs)+' failed: '+err);
+						let arrTransactionIds = rows.map(row => row.transaction_id);
+						db.query(
+							"UPDATE transactions SET refunded=1, refund_date = " + db.getNow() + ", refund_txid=? WHERE transaction_id IN(?)",
+							[txid, arrTransactionIds],
+							() => {
+								rows.forEach(row => {
+									if (row.device_address)
+										device.sendMessageToDevice(row.device_address, 'text', "Refunded "+row.currency_amount+" BTC");
+								});
+								cb();
+							}
+						);
+					});
+				},
+				onDone
+			);
+		}
+	);
+}
+
 
 
 eventBus.on('headless_wallet_ready', run);

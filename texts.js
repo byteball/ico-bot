@@ -9,9 +9,13 @@ function getPrices(){
 	var arrPrices = [];
 	for (var currency in conf.assocPrices){
 		let objPrice = conf.assocPrices[currency];
-		arrPrices.push((objPrice.price * displayTokensMultiplier)+' '+objPrice.price_currency+' when paid in '+currency);
+		arrPrices.push((objPrice.price * displayTokensMultiplier).toLocaleString([], {maximumFractionDigits: 9})+' '+objPrice.price_currency+' when paid in '+currency);
 	}
 	return arrPrices.join("\n");
+}
+
+function capitalizeFirstLetter(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
 exports.greeting = () => {
@@ -19,7 +23,7 @@ exports.greeting = () => {
 };
 
 exports.howmany = () => {
-	return 'How much and what currency are you willing to invest?\nFor example: 1.5GB, or 2.5ETH';
+	return 'How much and what currency are you willing to invest?\nFor example: 1.5GB, or 2.5ETH, or 0.5BTC';
 };
 
 exports.insertMyAddress = () => {
@@ -30,8 +34,8 @@ exports.paymentConfirmed = () => {
 	return 'The payment is confirmed, you will receive your tokens at the time of distribution.';
 };
 
-exports.sendEthereumAddressForRefund = () => {
-	return "Please send me your Ethereum address in case we need to make a refund.";
+exports.sendAddressForRefund = (platform) => {
+	return "Please send me your "+capitalizeFirstLetter(platform)+" address in case we need to make a refund.";
 };
 
 //errors

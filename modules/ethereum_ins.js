@@ -128,15 +128,18 @@ exports.readOrAssignReceivingAddress = async (device_address, cb) => {
 				cb(rows[0].receiving_address);
 				return unlock();
 			}
-			let receiving_address = await web3.eth.personal.newAccount(conf.ethPassword);
-			db.query(
-				"INSERT INTO receiving_addresses (receiving_address, currency, device_address) VALUES(?,?,?)",
-				[receiving_address, 'ETH', device_address],
-				() => {
-					cb(receiving_address);
-					unlock();
-				}
-			);
+			mutex.lock(['new_ethereum_address'], async (new_addr_unlock) => {
+				let receiving_address = await web3.eth.personal.newAccount(conf.ethPassword);
+				db.query(
+					"INSERT INTO receiving_addresses (receiving_address, currency, device_address) VALUES(?,?,?)",
+					[receiving_address, 'ETH', device_address],
+					() => {
+						cb(receiving_address);
+						new_addr_unlock();
+						unlock();
+					}
+				);
+			});
 		});
 	});
 };
