@@ -15,68 +15,52 @@ if (conf.ethEnabled) {
 let currentBlock;
 
 async function start() {
-	await web3.eth.subscribe('pendingTransactions', async (err, res) => {
-		console.log("===== new eth tx", err, res);
-		let transaction = await web3.eth.getTransaction(res);
-		console.log("===== transaction", transaction);
-		if (!transaction) return console.log("no transaction");
-		db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
-			FROM receiving_addresses \n\
-			JOIN user_addresses USING(device_address) \n\
-			WHERE receiving_address = ? AND receiving_addresses.currency='ETH' AND user_addresses.platform='BYTEBALL'", [transaction.to], rows => {
-			if (!rows.length) return console.log("no user found by address "+transaction.to);
-			eventBus.emit('new_in_transaction', {
-				txid: res,
-				currency_amount: transaction.value / 1e18,
-				currency: 'ETH',
-				device_address: rows[0].device_address,
-				byteball_address: rows[0].byteball_address,
-				receiving_address: rows[0].receiving_address
-			});
-		})
+	await web3.eth.subscribe('newBlockHeaders', async (err, res) => {
+		await startScan(true);
 	});
 }
 
-async function startScan() {
+async function startScan(bCheckLast) {
 	currentBlock = await web3.eth.getBlockNumber();
-	db.query("SELECT txid FROM transactions WHERE currency = 'ETH' ORDER BY transaction_id DESC LIMIT 1", async (rows) => {
-		let stopBlockNumber;
-		if (rows.length) stopBlockNumber = (await web3.eth.getTransaction(rows[0].txid).catch(e => console.error(e))).blockNumber - 2;
-		if (!stopBlockNumber) stopBlockNumber = currentBlock - 1000;
-		if (stopBlockNumber <= 0) stopBlockNumber = 1;
-		console.error('start scan')
-		db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
+	let stopBlockNumber;
+	if (bCheckLast) {
+		stopBlockNumber = currentBlock - 1;
+	}
+	if (!stopBlockNumber) stopBlockNumber = currentBlock - 2000;
+	if (stopBlockNumber <= 0) stopBlockNumber = 1;
+	console.error('start scan');
+	db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN user_addresses USING(device_address) \n\
 			WHERE receiving_addresses.currency = 'ETH' AND user_addresses.platform = 'BYTEBALL'", async (rows) => {
-			if (!rows.length) 
-				return console.log('ETH nothing to scan for');
-			let rowsByAddress = {}
-			rows.forEach(row => {
-				rowsByAddress[row.receiving_address] = row;
-			});
-			while (currentBlock-- > stopBlockNumber) {
-				let block = await web3.eth.getBlock(currentBlock, true);
-				if (block && block.transactions && block.transactions.length) {
-					block.transactions.forEach(transaction => {
-						if (rowsByAddress[transaction.to]) {
-							console.log('==== scan found a transaction', transaction);
-							eventBus.emit('new_in_transaction', {
-								txid: transaction.hash,
-								currency_amount: transaction.value / 1e18,
-								currency: 'ETH',
-								device_address: rowsByAddress[transaction.to].device_address,
-								byteball_address: rowsByAddress[transaction.to].byteball_address,
-								receiving_address: rowsByAddress[transaction.to].receiving_address
-							});
-						}
-					})
-				}
+		if (!rows.length)
+			return console.log('ETH nothing to scan for');
+		let rowsByAddress = {}
+		rows.forEach(row => {
+			rowsByAddress[row.receiving_address] = row;
+		});
+		while (currentBlock-- > stopBlockNumber) {
+			let block = await web3.eth.getBlock(currentBlock, true);
+			if (block && block.transactions && block.transactions.length) {
+				block.transactions.forEach(transaction => {
+					if (rowsByAddress[transaction.to]) {
+						console.log('==== scan found a transaction', transaction);
+						eventBus.emit('new_in_transaction', {
+							txid: transaction.hash,
+							currency_amount: transaction.value / 1e18,
+							currency: 'ETH',
+							device_address: rowsByAddress[transaction.to].device_address,
+							byteball_address: rowsByAddress[transaction.to].byteball_address,
+							receiving_address: rowsByAddress[transaction.to].receiving_address,
+							block_number: block.number
+						});
+					}
+				})
 			}
-			console.error('stop scan')
-			return true;
-		})
-	});
+		}
+		console.error('stop scan')
+		return true;
+	})
 }
 
 if (conf.ethEnabled) {
@@ -85,9 +69,7 @@ if (conf.ethEnabled) {
 		let lastBlockNumber = await web3.eth.getBlockNumber()
 		db.query("SELECT * FROM transactions WHERE currency = 'ETH' AND stable = 0", (rows) => {
 			rows.forEach(async (row) => {
-				let stableTx = await web3.eth.getTransactionReceipt(row.txid);
-				console.log('checking for stability of', stableTx);
-				if (stableTx && (lastBlockNumber - stableTx.blockNumber) >= conf.ethMinConfirmations) {
+				if ((lastBlockNumber - row.block_number) >= conf.ethMinConfirmations) {
 					console.log('tx is stable');
 					eventBus.emit('in_transaction_stable', {
 						txid: row.txid,
@@ -111,8 +93,8 @@ setInterval(async () => {
 			rescanning = false;
 			needRescan = false;
 		}
-	}else{
-		if(await web3.eth.isSyncing()){
+	} else {
+		if (await web3.eth.isSyncing()) {
 			needRescan = true;
 		}
 	}

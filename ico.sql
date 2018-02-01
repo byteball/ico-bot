@@ -33,6 +33,7 @@ CREATE TABLE transactions (
 	payout_unit CHAR(44) NULL,
 	refund_txid CHAR(100) NULL,
 	stable TINYINT DEFAULT 0,
+	block_number INT,
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address),
 	FOREIGN KEY (payout_unit) REFERENCES units(unit)
 );
