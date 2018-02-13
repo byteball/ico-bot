@@ -19,7 +19,7 @@ node sync.js
 ```
 It will take about 2 days on SSD.
 
-The bot is based on [headless wallet](../../headless-byteball), see its documentation too to understand what options you have.  Note that the default config enables TOR for security reasons, you need to have a TOR service running on your machine or disable TOR in conf.
+The bot is based on [headless wallet](../../../headless-byteball), see its documentation too to understand what options you have.  Note that the default config enables TOR for security reasons, you need to have a TOR service running on your machine or disable TOR in conf.
 
 Edit conf.js or conf.json to describe the properties of your token and token sale.
 
