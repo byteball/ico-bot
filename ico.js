@@ -265,8 +265,8 @@ async function sendMeEther() {
 // for real-time only
 function checkTokensBalance() {
 	db.query(
-		"SELECT SUM(amount) AS total_left FROM my_addresses CROSS JOIN outputs USING(address) WHERE is_spent=0 AND asset = ?",
-		[conf.issued_asset],
+		"SELECT SUM(amount) AS total_left FROM my_addresses CROSS JOIN outputs USING(address) WHERE is_spent=0 AND asset = ? AND EXISTS (SELECT 1 FROM inputs CROSS JOIN my_addresses USING(address) WHERE inputs.unit=outputs.unit AND inputs.asset=?)",
+		[conf.issued_asset, conf.issued_asset],
 		rows => {
 			let total_left = rows[0].total_left;
 			db.query("SELECT SUM(tokens) AS total_paid FROM transactions WHERE paid_out=1", rows => {
