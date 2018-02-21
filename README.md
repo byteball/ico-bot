@@ -15,15 +15,15 @@ npm install
 
 First, you need to sync your node
 ```sh
-node sync.js
+node sync.js 2>errlog
 ```
-It will take about 2 days on SSD.
+It will take about 3 days on SSD.
 
 The bot is based on [headless wallet](../../../headless-byteball), see its documentation too to understand what options you have.  Note that the default config enables TOR for security reasons, you need to have a TOR service running on your machine or disable TOR in conf.
 
 Edit conf.js or conf.json to describe the properties of your token and token sale.
 
-Chat with the bot, learn its address and pay a small amount (at least 3000 bytes) to fund asset issuance.  You’ll see the balance only when it is fully synced.
+Chat with the bot, learn its address and pay a small amount (at least 10000 bytes) to fund asset issuance.  You’ll see the balance only when it is fully synced.
 
 When it is synced, cd to `scripts` and run
 ```sh
@@ -35,7 +35,7 @@ Don't kill the script too early and follow its output.  It first creates a defin
 
 When issuance is done, run
 ```sh
-node ico.js
+node ico.js 2>errlog
 ```
 Thereafter, you start the daemon only with ico.js.  Now, the bot is ready to accept payments.
 
