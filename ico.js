@@ -136,7 +136,7 @@ eventBus.once('headless_and_rates_ready', () => {
 						let currency_ins = (currency === 'BTC') ? bitcoin_ins : ethereum_ins;
 						currency_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
 							device.sendMessageToDevice(from_address, 'text', 'You buy: ' + display_tokens + ' ' + conf.tokenName +
-								'\nPlease send '+amount+' '+currency+' to ' + receiving_address);
+								'\nPlease send ' + amount + ' ' + currency + ' to ' + receiving_address);
 						})
 						break;
 					case 'USDT':
@@ -225,12 +225,12 @@ function sendMeBtc() {
 	console.log('will accumulate BTC');
 	bitcoinApi.getBtcBalance(conf.btcMinConfirmations, (err, balance) => {
 		if (err)
-			return console.log("skipping BTC accumulation as getBtcBalance failed: "+err);
+			return console.log("skipping BTC accumulation as getBtcBalance failed: " + err);
 		if (balance < 0.5)
-			return console.log("skipping BTC accumulation as balance is only "+balance+" BTC");
+			return console.log("skipping BTC accumulation as balance is only " + balance + " BTC");
 		let amount = balance - 0.01;
 		bitcoinClient.sendToAddress(conf.accumulationAddresses.BTC, amount, (err, txid) => {
-			console.log('BTC accumulation: amount '+amount+', txid '+txid+', err '+err);
+			console.log('BTC accumulation: amount ' + amount + ', txid ' + txid + ', err ' + err);
 		});
 	});
 }
@@ -278,12 +278,16 @@ function checkTokensBalance() {
 	);
 }
 
-function getPlatformByCurrency(currency){
-	switch(currency){
-		case 'ETH': return 'ETHEREUM';
-		case 'BTC': return 'BITCOIN';
-		case 'GBYTE': return 'BYTEBALL';
-		default: throw Error("unknown currency: "+currency);
+function getPlatformByCurrency(currency) {
+	switch (currency) {
+		case 'ETH':
+			return 'ETHEREUM';
+		case 'BTC':
+			return 'BITCOIN';
+		case 'GBYTE':
+			return 'BYTEBALL';
+		default:
+			throw Error("unknown currency: " + currency);
 	}
 }
 
@@ -350,10 +354,14 @@ eventBus.on('new_in_transaction', tx => {
 		checkUserAdress(tx.device_address, platform, bAddressKnown => {
 			db.query("SELECT txid FROM transactions WHERE txid = ? AND currency = ?", [tx.txid, tx.currency], (rows) => {
 				if (rows.length) return;
+				let blockNumber = 0;
+				if (tx.currency === 'ETH' && tx.block_number) {
+					blockNumber = tx.block_number;
+				}
 				db.query(
-					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens) \n\
-					VALUES(?, ?,?, ?,?,?,?)",
-					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null], () => {
+					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, block_number) \n\
+					VALUES(?, ?,?, ?,?,?,?,?)",
+					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null, blockNumber], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
 						if (!bAddressKnown && conf.bRefundPossible)
 							device.sendMessageToDevice(tx.device_address, 'text', texts.sendAddressForRefund(platform));

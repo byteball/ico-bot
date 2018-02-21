@@ -82,10 +82,10 @@ $ geth --dev --mine --minerthreads 1 --ws --wsorigins "*" --wsapi "db,eth,net,we
 
 Start Ropsten test network node
 ```bash
-$ geth --testnet --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024
+$ geth --testnet --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode light
 ```
 
 Start Main network node
 ```bash
-$ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode fast
+$ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode light
 ```
