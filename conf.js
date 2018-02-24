@@ -85,3 +85,7 @@ exports.assocPrices = {
 };
 
 exports.bRefundPossible = true;
+
+exports.bRequireNonUs = false;
+exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
+

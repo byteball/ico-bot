@@ -92,9 +92,27 @@ eventBus.once('headless_and_rates_ready', () => {
 			if (!bByteballAddressKnown && !validationUtils.isValidAddress(ucText)) {
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			} else if (validationUtils.isValidAddress(ucText)) {
-				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'BYTEBALL', ucText], () => {
-					device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address.\n\n' + texts.howmany());
-				});
+				var address = ucText;
+				function saveByteballAddress(){
+					db.query(
+						'INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', 
+						[from_address, 'BYTEBALL', address], 
+						() => {
+							device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address.\n\n' + texts.howmany());
+						}
+					);
+				}
+				if (!conf.bRequireNonUs)
+					return saveByteballAddress();
+				db.query(
+					"SELECT 1 FROM attestations CROSS JOIN unit_authors USING(unit) WHERE attestations.address=? AND unit_authors.address IN(?)", 
+					[address, conf.arrNonUsAttestors],
+					rows => {
+						if (rows.length === 0)
+							return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents and the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
+						saveByteballAddress();
+					}
+				);
 				return;
 			} else if (Web3.utils.isAddress(lcText)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', lcText], () => {
