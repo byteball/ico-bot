@@ -86,6 +86,10 @@ exports.assocPrices = {
 
 exports.bRefundPossible = true;
 
+exports.bRequireRealName = false;
+exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT'];
+exports.arrRequiredPersonalData = ['first_name', 'last_name', 'country', 'dob', 'id_number', 'id_type'];
+
 exports.bRequireNonUs = false;
 exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
 

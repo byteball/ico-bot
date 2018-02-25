@@ -1,5 +1,6 @@
 /*jslint node: true */
 'use strict';
+const _ = require('lodash');
 const moment = require('moment');
 const constants = require('byteballcore/constants.js');
 const conf = require('byteballcore/conf');
@@ -7,6 +8,8 @@ const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
 const texts = require('./texts');
 const validationUtils = require('byteballcore/validation_utils');
+const privateProfile = require('byteballcore/private_profile.js');
+const walletGeneral = require('byteballcore/wallet_general.js');
 const notifications = require('./modules/notifications');
 const byteball_ins = require('./modules/byteball_ins');
 const ethereum_ins = require('./modules/ethereum_ins');
@@ -28,6 +31,15 @@ if (!conf.issued_asset)
 
 if (conf.ethEnabled) {
 	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+}
+
+if (conf.bLight && conf.bRequireNonUs){ // add the attestor address to 'my' addresses in order to receive all attestations
+	var originalReadMyAddresses = walletGeneral.readMyAddresses;
+	walletGeneral.readMyAddresses = function(handleAddresses){
+		originalReadMyAddresses(function(arrAddresses){
+			handleAddresses(arrAddresses.concat(conf.arrNonUsAttestors));
+		});
+	};
 }
 
 conversion.enableRateUpdates();
@@ -88,33 +100,63 @@ eventBus.once('headless_and_rates_ready', () => {
 		if (moment() > moment(conf.endDate, 'DD.MM.YYYY hh:mm'))
 			return device.sendMessageToDevice(from_address, 'text', 'The ICO is already over.');
 
+		let arrProfileMatches = text.match(/\(profile:(.+?)\)/);
+		
 		checkUserAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
-			if (!bByteballAddressKnown && !validationUtils.isValidAddress(ucText)) {
+			if (!bByteballAddressKnown && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
-			} else if (validationUtils.isValidAddress(ucText)) {
-				var address = ucText;
+			
+			function handleUserAddress(address, bWithData){
 				function saveByteballAddress(){
 					db.query(
 						'INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', 
 						[from_address, 'BYTEBALL', address], 
 						() => {
-							device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address.\n\n' + texts.howmany());
+							device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address'+(bWithData ? ' and personal data' : '')+'.\n\n' + texts.howmany());
 						}
 					);
 				}
 				if (!conf.bRequireNonUs)
 					return saveByteballAddress();
+				// check non-US attestation
 				db.query(
 					"SELECT 1 FROM attestations CROSS JOIN unit_authors USING(unit) WHERE attestations.address=? AND unit_authors.address IN(?)", 
 					[address, conf.arrNonUsAttestors],
 					rows => {
 						if (rows.length === 0)
-							return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents and the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
+							return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents but the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
 						saveByteballAddress();
 					}
 				);
+			}
+			
+			if (validationUtils.isValidAddress(ucText)) {
+				if (conf.bRequireRealName)
+					return device.sendMessageToDevice(from_address, 'text', "You have to provide your attested profile, just Byteball address is not enough.");
+				return handleUserAddress(ucText);
+			}
+			else if (arrProfileMatches){
+				let privateProfileJsonBase64 = arrProfileMatches[1];
+				if (!conf.bRequireRealName)
+					return device.sendMessageToDevice(from_address, 'text', "Private profile is not required");
+				let objPrivateProfile = privateProfile.getPrivateProfileFromJsonBase64(privateProfileJsonBase64);
+				if (!objPrivateProfile)
+					return device.sendMessageToDevice(from_address, 'text', "Invalid private profile");
+				privateProfile.parseAndValidatePrivateProfile(objPrivateProfile, function(err, address, attestor_address){
+					if (err)
+						return device.sendMessageToDevice(from_address, 'text', "Failed to parse the private profile: "+err);
+					if (conf.arrRealNameAttestors.indexOf(attestor_address) === -1)
+						return device.sendMessageToDevice(from_address, 'text', "We don't recognize the attestor "+attestor_address+" who attested your profile.  The only trusted attestors are: "+conf.arrRealNameAttestors.join(', '));
+					let assocPrivateData = privateProfile.parseSrcProfile(objPrivateProfile.src_profile);
+					let arrMissingFields = _.difference(conf.arrRequiredPersonalData, Object.keys(assocPrivateData));
+					if (arrMissingFields.length > 0)
+						return device.sendMessageToDevice(from_address, 'text', "These fields are missing in your profile: "+arrMissingFields.join(', '));
+					privateProfile.savePrivateProfile(objPrivateProfile, address, attestor_address);
+					handleUserAddress(address, true);
+				});
 				return;
-			} else if (Web3.utils.isAddress(lcText)) {
+			}
+			else if (Web3.utils.isAddress(lcText)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', lcText], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.');
 				});

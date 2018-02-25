@@ -14,6 +14,7 @@
     "byteballcore": "git+https://github.com/byteball/byteballcore.git",
     "emailjs": "^1.0.10",
     "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
+    "lodash": "^4.6.1",
     "moment": "^2.18.1",
     "request": "^2.81.0",
 	"bitcoin": "^3.0.1",

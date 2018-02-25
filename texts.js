@@ -27,7 +27,9 @@ exports.howmany = () => {
 };
 
 exports.insertMyAddress = () => {
-	return 'Please send me your address where you wish to receive the tokens (click ... and Insert my address).';
+	return conf.bRequireRealName
+		? 'To participate in this ICO, your real name has to be attested and we require to provide your private profile, which includes your first name, last name, country, date of birth, and ID number.  If you are not attested yet, find "Real name attestation bot" in the Bot Store and have your address attested.  If you are already attested, click this link to reveal your private profile to us: [profile request](profile-request:'+conf.arrRequiredPersonalData.join(',')+').  We\'ll keep your personal data private and will not share it with anybody except as required by law.'
+		: 'Please send me your address where you wish to receive the tokens (click ... and Insert my address).';
 };
 
 exports.paymentConfirmed = () => {
