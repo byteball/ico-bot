@@ -73,6 +73,10 @@ exports.tokenDisplayDecimals = 2; // display token = 100 tokens
 exports.rulesOfDistributionOfTokens = 'real-time'; // real-time OR one-time
 //exports.rulesOfDistributionOfTokens = 'one-time'; // real-time OR one-time
 exports.exchangeRateDate = 'distribution'; // if (rulesOfDistributionOfTokens == 'one-time') receipt-of-payment OR distribution
+
+// the prices are for the smallest indivisible unit (there are totalTokens of them).
+// the key is the payment currency, prices can be different depending on currency.
+// all prices are in 'price_currency', which might be different from the payment currency
 exports.assocPrices = {
 	GBYTE: {
 		price: 0.001,

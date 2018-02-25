@@ -19,9 +19,18 @@ node sync.js 2>errlog
 ```
 It will take about 3 days on SSD.
 
-The bot is based on [headless wallet](../../../headless-byteball), see its documentation too to understand what options you have.  Note that the default config enables TOR for security reasons, you need to have a TOR service running on your machine or disable TOR in conf.
+The bot is based on [headless wallet](../../../headless-byteball), see its documentation too to understand what options you have.  Also see the documentation of [the core library](../../../byteballcore).  Note that the default config enables TOR for security reasons, you need to have a TOR service running on your machine or disable TOR in conf.
 
-Edit conf.js or conf.json to describe the properties of your token and token sale.
+Edit `conf.js` or `conf.json` to describe the properties of your token and token sale.  See the comments in `conf.js` which describe the options.  Some of the most important options:
+
+* `bRequireRealName`: to require KYC.
+* `bRequireNonUs`: to allow only non-US investors.
+* `rulesOfDistributionOfTokens`: `real-time` for sending tokens immediately after the payment is confirmed, `one-time` for collecting investments during the ICO, and then sending tokens to all investors in one go when the ICO is over.
+* `totalTokens`: total number of smallest indivisible units (pennies) of the newly issued token.
+* `tokenDisplayDecimals`: number of decimals in user-displayed amounts of the token.  Total supply in user-displayed units is `totalTokens / 10^tokenDisplayDecimals`.
+* `assocPrices`: prices of your token depending on the payment currency.  The prices can be pegged to another currency, such as USD, in this case the prices in payment currency are periodically updated using exchange feeds.
+* `startDate` and `endDate`: start and end dates of the crowdsale.
+* `accumulationAddresses`: all collected funds are periodically swept to these addresses (one address per currency), it is recommended that these addresses are better secured by being multisig or offline.
 
 Chat with the bot, learn its address and pay a small amount (at least 10000 bytes) to fund asset issuance.  You’ll see the balance only when it is fully synced.
 
