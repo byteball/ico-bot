@@ -6,10 +6,20 @@ const conf = require('byteballcore/conf.js');
 const displayTokensMultiplier = Math.pow(10, conf.tokenDisplayDecimals);
 
 function getPrices(){
+	if (conf.assocPrices['all']){
+		let arrCurrencies = ['GBYTE'];
+		if (conf.ethEnabled)
+			arrCurrencies.push('ETH');
+		if (conf.btcEnabled)
+			arrCurrencies.push('BTC');
+		let objPrice = conf.assocPrices['all'];
+		return (objPrice.price * displayTokensMultiplier).toLocaleString([], {maximumFractionDigits: 9})+' '+objPrice.price_currency+' when paid in '+arrCurrencies.join(', ');
+	}
+	// no 'all' price
 	var arrPrices = [];
 	for (var currency in conf.assocPrices){
 		let objPrice = conf.assocPrices[currency];
-		arrPrices.push((objPrice.price * displayTokensMultiplier).toLocaleString([], {maximumFractionDigits: 9})+' '+objPrice.price_currency+' when paid in '+currency);
+		arrPrices.push((objPrice.price * displayTokensMultiplier).toLocaleString([], {maximumFractionDigits: 9})+' '+objPrice.price_currency+' when paid in '+(currency === 'default' ? 'any other supported currency' : currency));
 	}
 	return arrPrices.join("\n");
 }

@@ -144,7 +144,7 @@ function getCurrencyRateOfGB(currency) {
 }
 
 function convertCurrencyToTokens(amountInCurrency, currency) {
-	let objPrice = conf.assocPrices[currency];
+	let objPrice = conf.assocPrices['all'] || conf.assocPrices[currency] || conf.assocPrices['default'];
 	if (!objPrice)
 		throw Error('no price for ' + currency);
 	let amountInPriceCurrency = amountInCurrency * getCurrencyRate(currency, objPrice.price_currency);

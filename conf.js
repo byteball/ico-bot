@@ -76,17 +76,36 @@ exports.exchangeRateDate = 'distribution'; // if (rulesOfDistributionOfTokens ==
 
 // the prices are for the smallest indivisible unit (there are totalTokens of them).
 // the key is the payment currency, prices can be different depending on currency.
+// special values for the payment currency:
+//   all: to set the same price for all payment currencies (recommended), all other keys are ignored in this case
+//   default: to set the price for all other supported currencies
 // all prices are in 'price_currency', which might be different from the payment currency
+
+// same price for all currences:
+exports.assocPrices = {
+	all: {
+		price: 0.001,
+		price_currency: 'USD'
+	}
+};
+/*
+// different prices depending on which currency is invested
 exports.assocPrices = {
 	GBYTE: {
 		price: 0.001,
 		price_currency: 'USD'
 	},
 	ETH: {
+		price: 0.0015,
+		price_currency: 'USD'
+	},
+	// optional: any other currency not listed above
+	default: {
 		price: 0.001,
 		price_currency: 'USD'
 	}
 };
+*/
 
 exports.bRefundPossible = true;
 
