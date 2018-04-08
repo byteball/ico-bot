@@ -7,7 +7,7 @@ const objAvailableTypes = {
 
 const $btnCountType = $('#btn-count-type');
 const $btnSumType = $('#btn-sum-type');
-const $elNumberSum = $('#number-sum');
+const $elNumberTotalSum = $('#number-total-sum');
 const $elNumberTransactions = $('#number-transactions');
 const $elNumberUserPaid = $('#number-users-paid');
 const $elNumberUserAll = $('#number-users-all');
@@ -113,8 +113,8 @@ function loadCommonData() {
 		.then((response) => {
 			// console.log('response', response);
 
-			$elNumberSum.animateNumber({
-				number: Math.round(response.common_sum),
+			$elNumberTotalSum.animateNumber({
+				number: Math.round(response.total_sum),
 				numberStep: animateNumberSeparator
 			});
 			$elNumberTransactions.animateNumber({

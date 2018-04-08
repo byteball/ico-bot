@@ -79,18 +79,13 @@ router.get('/transactions', [
     FROM transactions
     WHERE ${strSqlWhere}`;
 
-    let strShiftDecimal = '0.';
-    for (let i = 1; i < conf.tokenDisplayDecimals; i++) {
-        strShiftDecimal += '0';
-    }
-    strShiftDecimal += '1';
     const strSql = `SELECT
         txid,
         receiving_address,
         byteball_address,
         currency,
         ROUND(currency_amount, ${conf.tokenDisplayDecimals}) AS currency_amount,
-        ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
+        ROUND(tokens / ${Math.pow(10, conf.tokenDisplayDecimals)}, ${conf.tokenDisplayDecimals}) AS tokens,
         stable,
         creation_date
     FROM transactions
@@ -163,10 +158,10 @@ router.get('/common', (req, res) => {
     GROUP BY currency`;
 
     db.query(strSql, arrParams, (rows) => {
-        let commonSum = 0.0;
+        let totalSum = 0.0;
         for (let i = 0; i < rows.length; i++) {
             let row = rows[i];
-            commonSum += (row.currency_amount * conversion.getCurrencyRate(row.currency, 'USD'));
+            totalSum += (row.currency_amount * conversion.getCurrencyRate(row.currency, 'USD'));
         }
 
         strSql = `SELECT
@@ -177,10 +172,7 @@ router.get('/common', (req, res) => {
 
         db.query(strSql, arrParams, (rows) => {
             let row = rows[0];
-            row.common_sum = parseFloat(commonSum.toFixed(conf.tokenDisplayDecimals));/*.toLocaleString([], {
-                minimumFractionDigits: conf.tokenDisplayDecimals,
-                maximumFractionDigits: conf.tokenDisplayDecimals
-            });*/
+            row.total_sum = parseFloat(totalSum.toFixed(conf.tokenDisplayDecimals));
             res.status(200).json(row);
         });
     });
