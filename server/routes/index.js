@@ -79,13 +79,18 @@ router.get('/transactions', [
     FROM transactions
     WHERE ${strSqlWhere}`;
 
+    let strShiftDecimal = '0.';
+    for (let i = 1; i < conf.tokenDisplayDecimals; i++) {
+        strShiftDecimal += '0';
+    }
+    strShiftDecimal += '1';
     const strSql = `SELECT
         txid,
         receiving_address,
         byteball_address,
         currency,
         ROUND(currency_amount, ${conf.tokenDisplayDecimals}) AS currency_amount,
-        ROUND(tokens / ${Math.pow(10, conf.tokenDisplayDecimals)}, ${conf.tokenDisplayDecimals}) AS tokens,
+        ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
         stable,
         creation_date
     FROM transactions
