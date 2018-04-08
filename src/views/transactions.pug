@@ -19,26 +19,26 @@ append content-main
 			.row
 				.col-sm-12.col-md-6.col-lg-3
 					.form-group
-						label(for='t_f_txid') txid
-						input#t_f_txid.form-control(type='text', name="f_txid", placeholder='enter txid',
+						label(for='filter_txid') txid
+						input#filter_txid.form-control(type='text', name="filter_txid", placeholder='enter txid',
 						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
 				.col-sm-12.col-md-6.col-lg-3
 					.form-group
-						label(for='t_f_receiving_address') receiving address
-						input#t_f_receiving_address.form-control(type='text', name="f_receiving_address", placeholder='enter receiving address',
+						label(for='filter_receiving_address') receiving address
+						input#filter_receiving_address.form-control(type='text', name="filter_receiving_address", placeholder='enter receiving address',
 						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
 				.col-sm-12.col-md-6.col-lg-3
 					.form-group
-						label(for='t_f_bb_address') byteball address
-						input#t_f_bb_address.form-control(type='text', name="f_bb_address", placeholder='enter bb address',
+						label(for='filter_bb_address') byteball address
+						input#t_f_bb_address.form-control(type='text', name="filter_bb_address", placeholder='enter bb address',
 						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
 
 				.col-sm-12.col-md-6.col-lg-3
 					.row
 						.col-sm-6
 							.form-group
-								label(for='t_f_currency') currency
-								select#t_f_currency.form-control(name="f_currency", onchange="table.actions.onChangeFilter(this)")
+								label(for='filter_currency') currency
+								select#filter_currency.form-control(name="filter_currency", onchange="table.actions.onChangeFilter(this)")
 									option all
 									option GBYTE
 									option BTC
@@ -46,8 +46,8 @@ append content-main
 									option USDT
 						.col-sm-6
 							.form-group
-								label(for='t_f_stable') stable
-								select#t_f_stable.form-control(name="f_stable", onchange="table.actions.onChangeFilter(this)")
+								label(for='filter_stable') stable
+								select#filter_stable.form-control(name="filter_stable", onchange="table.actions.onChangeFilter(this)")
 									option all
 									option true
 									option false
@@ -61,7 +61,7 @@ append content-main
 		.pull-left.pagination-detail
 			span.page-list
 				span.btn-group.dropup
-					select#t_limit.form-control(onchange="table.actions.onChangeLimit(this)")
+					select#limit.form-control(onchange="table.actions.onChangeLimit(this)")
 						option 10
 						option 25
 						option 50

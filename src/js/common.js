@@ -1,3 +1,5 @@
+loadInitData();
+
 window.common = {
 	getJsonFromUrl: function() {
 		let query = location.search.substr(1);
@@ -9,3 +11,13 @@ window.common = {
 		return result;
 	}
 };
+
+function loadInitData() {
+	$.get('/api/init')
+		.then((response) => {
+			if (response.tokenName) {
+				$('#headerTitle').text(response.tokenName);
+			}
+		})
+		.catch(() => {});
+}

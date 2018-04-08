@@ -14,8 +14,8 @@ append content-main
 	#container-highcharts-graph(style='min-width: 310px; height: 400px; margin: 0 auto')
 	.text-center.filter-currency
 		.form-group
-			label(for='t_f_currency') currency
-			select#t_f_currency.form-control(name="f_currency", onchange="index.actions.onChangeCurrency(this)")
+			label(for='filter_currency') currency
+			select#filter_currency.form-control(name="filter_currency", onchange="index.actions.onChangeCurrency(this)")
 				option all
 				option GBYTE
 				option BTC

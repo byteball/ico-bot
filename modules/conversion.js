@@ -166,4 +166,4 @@ updateBittrexRates();
 exports.convertCurrencyToTokens = convertCurrencyToTokens;
 exports.enableRateUpdates = enableRateUpdates;
 exports.displayTokensMultiplier = displayTokensMultiplier;
-
+exports.getCurrencyRate = getCurrencyRate;

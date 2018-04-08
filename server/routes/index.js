@@ -4,6 +4,7 @@ const db = require('byteballcore/db');
 const log = require('./../libs/logger')(module);
 const { query: checkQuery, validationResult, oneOf } = require('express-validator/check');
 const { matchedData, sanitize } = require('express-validator/filter');
+const conversion = require('./../../modules/conversion.js');
 
 const arrCurrencies = ['GBYTE', 'BTC', 'ETH', 'USDT'];
 
@@ -14,16 +15,22 @@ router.get('/', (req, res) => {
     });
 });
 
-const checkCurrencyData = checkQuery('f_currency').optional().isIn(['all', 'GBYTE', 'BTC', 'ETH', 'USDT']);
+router.get('/init', (req, res) => {
+    res.status(200).json({
+        tokenName: conf.tokenName
+    });
+});
+
+const checkCurrencyData = checkQuery('filter_currency').optional().isIn(['all', 'GBYTE', 'BTC', 'ETH', 'USDT']);
 
 router.get('/transactions', [
     checkQuery('page').optional().isInt({min:1}),
     checkQuery('limit').optional().isInt({min:1, max:100}),
     checkQuery('sort').optional().isIn(['currency_amount', 'creation_date']),
-    checkQuery('f_bb_address').optional().trim(),
-    checkQuery('f_receiving_address').optional().trim(),
-    checkQuery('f_txid').optional().trim(),
-    checkQuery('f_stable').optional().trim(),
+    checkQuery('filter_bb_address').optional().trim(),
+    checkQuery('filter_receiving_address').optional().trim(),
+    checkQuery('filter_txid').optional().trim(),
+    checkQuery('filter_stable').optional().trim(),
     checkCurrencyData,
 ], (req, res) => {
     const objErrors = validationResult(req);
@@ -45,25 +52,25 @@ router.get('/transactions', [
     let arrParams = [];
 
     let strSqlWhere = '1=1';
-    if (data.f_bb_address) {
+    if (data.filter_bb_address) {
         strSqlWhere += ' AND byteball_address = ?';
-        arrParams.push(data.f_bb_address);
+        arrParams.push(data.filter_bb_address);
     }
-    if (data.f_receiving_address) {
+    if (data.filter_receiving_address) {
         strSqlWhere += ' AND receiving_address = ?';
-        arrParams.push(data.f_receiving_address);
+        arrParams.push(data.filter_receiving_address);
     }
-    if (data.f_txid) {
+    if (data.filter_txid) {
         strSqlWhere += ' AND txid = ?';
-        arrParams.push(data.f_txid);
+        arrParams.push(data.filter_txid);
     }
-    if (data.f_currency && data.f_currency !== 'all') {
+    if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
-        arrParams.push(data.f_currency);
+        arrParams.push(data.filter_currency);
     }
-    if (data.hasOwnProperty('f_stable') && data.f_stable !== 'all') {
+    if (data.hasOwnProperty('filter_stable') && data.filter_stable !== 'all') {
         strSqlWhere += ' AND stable = ?';
-        arrParams.push(['true','1',1].includes(data.f_stable) ? 1 : 0);
+        arrParams.push(['true','1',1].includes(data.filter_stable) ? 1 : 0);
     }
 
     const arrParamsTotal = arrParams.slice();
@@ -72,8 +79,20 @@ router.get('/transactions', [
     FROM transactions
     WHERE ${strSqlWhere}`;
 
+    let strShiftDecimal = '0.';
+    for (let i = 1; i < conf.tokenDisplayDecimals; i++) {
+        strShiftDecimal += '0';
+    }
+    strShiftDecimal += '1';
     const strSql = `SELECT
-        *
+        txid,
+        receiving_address,
+        byteball_address,
+        currency,
+        ROUND(currency_amount, ${conf.tokenDisplayDecimals}) AS currency_amount,
+        ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
+        stable,
+        creation_date
     FROM transactions
     WHERE ${strSqlWhere}
     ORDER BY ${strOrderByField} DESC
@@ -95,7 +114,7 @@ router.get('/transactions', [
 
 router.get('/statistic', [
     checkCurrencyData,
-    checkQuery(['f_date_from', 'f_date_to']).optional().isISO8601(),
+    checkQuery(['filter_date_from', 'filter_date_to']).optional().isISO8601(),
 ], (req, res) => {
     const objErrors = validationResult(req);
     if (!objErrors.isEmpty()) {
@@ -106,20 +125,20 @@ router.get('/statistic', [
 
     let arrParams = [];
 
-    let strSqlWhere = 'stable = 1';
-    if (data.f_currency && data.f_currency !== 'all') {
+    let strSqlWhere = '1=1';//stable = 1';
+    if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
-        arrParams.push(data.f_currency);
+        arrParams.push(data.filter_currency);
     }
-    if (data.f_date_from && data.f_date_to) {
+    if (data.filter_date_from && data.filter_date_to) {
         strSqlWhere += ' AND paid_date BETWEEN ? AND ?';
-        arrParams.push(data.f_date_from, data.f_date_to);
+        arrParams.push(data.filter_date_from, data.filter_date_to);
     }
 
     const strSql = `SELECT
         date(paid_date) AS date,
         COUNT(transaction_id) AS count
-        ${(data.f_currency && data.f_currency!=='all') ? ', SUM(currency_amount) AS sum': ''} 
+        ${(data.filter_currency && data.filter_currency!=='all') ? `, ROUND(SUM(currency_amount), ${conf.tokenDisplayDecimals}) AS sum`: ''} 
     FROM transactions
     WHERE ${strSqlWhere}
     GROUP BY date
@@ -137,19 +156,32 @@ router.get('/common', (req, res) => {
 
     let arrParams = [];
 
-    const strSql = `SELECT
-        SUM(currency_amount) AS common_sum,
-        COUNT(transaction_id) AS count_transactions,
-        (SELECT COUNT(t.device_address) AS count FROM (SELECT device_address FROM transactions GROUP BY device_address) AS t) AS users_all,
-        (SELECT COUNT(t.device_address) AS count FROM (SELECT device_address FROM transactions WHERE paid_out = 1 GROUP BY device_address) AS t) AS users_paid
-    FROM transactions`;
+    let strSql = `SELECT
+        currency,
+        SUM(currency_amount) AS currency_amount
+    FROM transactions
+    GROUP BY currency`;
 
     db.query(strSql, arrParams, (rows) => {
-        res.status(200).json(rows.length ? rows[0] : { 
-            common_sum: 0,
-            count_transactions: 0,
-            users_all: 0,
-            users_paid: 0
+        let commonSum = 0.0;
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i];
+            commonSum += (row.currency_amount * conversion.getCurrencyRate(row.currency, 'USD'));
+        }
+
+        strSql = `SELECT
+            COUNT(transaction_id) AS count_transactions,
+            (SELECT COUNT(t.device_address) AS count FROM (SELECT device_address FROM transactions GROUP BY device_address) AS t) AS users_all,
+            (SELECT COUNT(t.device_address) AS count FROM (SELECT device_address FROM transactions WHERE paid_out = 1 GROUP BY device_address) AS t) AS users_paid
+        FROM transactions`;
+
+        db.query(strSql, arrParams, (rows) => {
+            let row = rows[0];
+            row.common_sum = parseFloat(commonSum.toFixed(conf.tokenDisplayDecimals));/*.toLocaleString([], {
+                minimumFractionDigits: conf.tokenDisplayDecimals,
+                maximumFractionDigits: conf.tokenDisplayDecimals
+            });*/
+            res.status(200).json(row);
         });
     });
 });

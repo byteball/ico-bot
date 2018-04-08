@@ -11,7 +11,7 @@ const $elNumberSum = $('#number-sum');
 const $elNumberTransactions = $('#number-transactions');
 const $elNumberUserPaid = $('#number-users-paid');
 const $elNumberUserAll = $('#number-users-all');
-const $elFilterCurrency = $('#t_f_currency');
+const $elFilterCurrency = $('#filter_currency');
 
 const animateNumberSeparator = $.animateNumber.numberStepFactories.separator(',');
 
@@ -23,9 +23,9 @@ let filter = {
 };
 
 let jsonParams = common.getJsonFromUrl();
-if (jsonParams.f_currency) {
-	filter.currency = jsonParams.f_currency;
-	$elFilterCurrency.val(jsonParams.f_currency);
+if (jsonParams.filter_currency) {
+	filter.currency = jsonParams.filter_currency;
+	$elFilterCurrency.val(jsonParams.filter_currency);
 }
 filter.currency !== 'all' ? $btnSumType.show() : $btnSumType.hide();
 
@@ -146,12 +146,12 @@ function loadChartData() {
 	chart.showLoading();
 	let params = {};
 	if (filter.currency) {
-		params.f_currency = filter.currency;
+		params.filter_currency = filter.currency;
 	}
 
-	if (jsonParams.f_currency !== params.f_currency) {
+	if (jsonParams.filter_currency !== params.filter_currency) {
 		window.history.pushState({}, '', '?' + $.param(params));
-		jsonParams.f_currency = params.f_currency;
+		jsonParams.filter_currency = params.filter_currency;
 	}
 
 	$.get('/api/statistic', params)

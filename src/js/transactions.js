@@ -10,6 +10,14 @@ let table = new Table({
 		// 'transaction_id': {
 		// 	title: 'id'
 		// },
+		'creation_date': {
+			head: {
+				title: 'created',
+				sort: {
+					used: true,
+				},
+			}
+		},
 		'txid': {
 			body: {
 				format: (val, row) => {
@@ -63,26 +71,18 @@ let table = new Table({
 				}
 			}
 		},
-		'creation_date': {
-			head: {
-				title: 'created',
-				sort: {
-					used: true,
-				},
-			}
-		},
 		// 'block_number': {},
 	}
 }, $elTableHead, $elTableBody, $elTablePagination);
 window.table = table;
 
 window.onpopstate = (event) => {
-	if (table.checkIsWasChangedUrlParams()) {
+	if (table.checkUrlParamsWereChanged()) {
 		table.loadData();
 	}
 };
 
-table.checkIsWasChangedUrlParams();
+table.checkUrlParamsWereChanged();
 table.createHeader();
 table.createPagination();
 

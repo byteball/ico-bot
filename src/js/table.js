@@ -87,7 +87,7 @@ class Table {
 			const strClass = Object.keys(classes).filter((key, index) => {
 				return !!classes[key];
 			}).join(' ');
-			strTh += `<th id="t_s_${key}" name="${key}" scope="col" class="${strClass}" onclick="table.actions.onChangeSort(this)">${title}</th>`;
+			strTh += `<th id="sort_${key}" name="${key}" scope="col" class="${strClass}" onclick="table.actions.onChangeSort(this)">${title}</th>`;
 		}
 		strTh += '</tr>';
 
@@ -138,31 +138,37 @@ class Table {
 		let str = `<li class="page-item"><a class="page-link" onclick="table.actions.onChangePage(${currPage > 1 ? currPage - 1 : 1})" aria-label="Previous"><span aria-hidden="true">&laquo;</span><span class="sr-only">Previous</span></a></li>`;
 		// first page
 		str += this.getPaginationLi(1, currPage === 1);
+
 		if (totalRows > 1) {
-			let nFrom = 2, nTo = 6, isNeedRightSpread = false;
-			if (totalRows <= 7) {
+			let nFrom = 2, nTo, bNeedRightEllipsis = false;
+			const paginationPageItemsLimit = 7;
+			const paginationPageItemsBorderEllipsisLimit = 4;
+			if (totalRows <= paginationPageItemsLimit) {
 				nTo = totalRows - 1;
 			} else {
-				if (currPage > 4) {
+				if (currPage > paginationPageItemsBorderEllipsisLimit) {
+					// left ellipsis
 					str += `<li class="page-item disabled"><a class="page-link">...</a></li>`;
+
 					nFrom = currPage - 1;
-					if (currPage < (totalRows - 3)) {
-						isNeedRightSpread = true;
+					if (currPage <= (totalRows - paginationPageItemsBorderEllipsisLimit)) {
+						bNeedRightEllipsis = true;
 						nTo = currPage + 1;
 					} else {
-						nFrom = totalRows - 4;
+						nFrom = totalRows - paginationPageItemsBorderEllipsisLimit;
 						nTo = totalRows - 1;
 					}
 				} else {
-					isNeedRightSpread = true;
-					nTo = 5;
+					bNeedRightEllipsis = true;
+					nTo = paginationPageItemsBorderEllipsisLimit + 1;
 				}
 			}
 			// middle numbers
 			for (let i = nFrom; i <= nTo; i++) {
 				str += this.getPaginationLi(i, currPage === i);
 			}
-			if (isNeedRightSpread) {
+			// right ellipsis
+			if (bNeedRightEllipsis) {
 				str += `<li class="page-item disabled"><a class="page-link">...</a></li>`;
 			}
 			// last page
@@ -177,23 +183,23 @@ class Table {
 		return `<li class="page-item ${isActive ? 'active' : ''}"><a class="page-link" onclick="table.actions.onChangePage(${number})">${number}</a></li>`;
 	}
 
-	checkIsWasChangedUrlParams() {
+	checkUrlParamsWereChanged() {
 		let jsonParams = common.getJsonFromUrl();
-		let isWasChanged = false;
+		let bWereChanged = false;
 
 		if (jsonParams.page) {
 			jsonParams.page = Number(jsonParams.page);
 			if (jsonParams.page !== this.data.page) {
 				this.data.page = jsonParams.page;
-				isWasChanged = true;
+				bWereChanged = true;
 			}
 		}
 		if (jsonParams.limit) {
 			jsonParams.limit = Number(jsonParams.limit);
 			if (jsonParams.limit !== this.data.limit) {
 				this.data.limit = jsonParams.limit;
-				$('#t_limit').val(this.data.limit);
-				isWasChanged = true;
+				$('#limit').val(this.data.limit);
+				bWereChanged = true;
 			}
 		}
 		if (jsonParams.sort) {
@@ -202,13 +208,13 @@ class Table {
 				this.data.sort = val;
 				if (this.params[val] && this.params[val].head && this.params[val].head.sort) {
 					this.params[val].head.sort.used = true;
-					$(`#t_s_${val}`).addClass('sort--used');
+					$(`#sort_${val}`).addClass('sort--used');
 				}
 				for (let key in this.params) {
 					if (!this.params.hasOwnProperty(key) || key === val) continue;
 					if (this.params[key].head && this.params[key].head.sort) {
 						this.params[key].head.sort.used = false;
-						$(`#t_s_${key}`).removeClass('sort--used');
+						$(`#sort_${key}`).removeClass('sort--used');
 					}
 				}
 			}
@@ -234,9 +240,9 @@ class Table {
 				if (this.data.jsonUrlFilterFormat[key] && this.data.jsonUrlFilterFormat[key].update) {
 					this.data.jsonUrlFilterFormat[key].update(value);
 				} else {
-					$(`#t_${key}`).val(value);
+					$(`#${key}`).val(value);
 				}
-				isWasChanged = true;
+				bWereChanged = true;
 			}
 		}
 		let prevFilters = this.data.filter;
@@ -244,12 +250,12 @@ class Table {
 			if (!prevFilters.hasOwnProperty(key)) continue;
 			if (!jsonParams[key]) {
 				delete prevFilters[key];
-				$(`#t_${key}`).val('');
-				isWasChanged = true;
+				$(`#${key}`).val('');
+				bWereChanged = true;
 			}
 		}
 
-		return isWasChanged;
+		return bWereChanged;
 	}
 }
 
@@ -279,7 +285,7 @@ class TableActions {
 	onChangePage(page) {
 		// console.log('onChangePage el', page);
 		let prevPage = this.table.data.page;
-		if (prevPage === page) return;
+		if (!page || page < 0 || prevPage === page) return;
 		this.table.data.page = page;
 		this.table.loadData();
 	}
@@ -290,13 +296,13 @@ class TableActions {
 		let val = el.getAttribute('name');
 		if (this.table.params[val] && this.table.params[val].head) {
 			this.table.params[val].head.used = true;
-			$(`#t_s_${val}`).addClass('sort--used');
+			$(`#sort_${val}`).addClass('sort--used');
 		}
 		for (let key in this.table.params) {
 			if (!this.table.params.hasOwnProperty(key) || key === val) continue;
 			if (this.table.params[key].head) {
 				this.table.params[key].head.used = false;
-				$(`#t_s_${key}`).removeClass('sort--used');
+				$(`#sort_${key}`).removeClass('sort--used');
 			}
 		}
 		this.table.data.sort = val;
