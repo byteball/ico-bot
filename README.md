@@ -1,4 +1,4 @@
-# ICO Bot
+# ICO Bot with Web server
 
 This bot allows to run an ICO on Byteball network.  It accepts Bytes, BTC, and Ether from users and sends back the new tokens in exchange.  You set the prices relative to USD or other fiat or crypto currencies. 
 
@@ -98,3 +98,42 @@ Start Main network node
 ```bash
 $ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode light
 ```
+
+## Web server
+
+### Environment
+
+#### Back End
+* [node.js](https://nodejs.org/en/) (v8.x.x)
+* [sqlite](https://www.postgresql.org/) (v3.x.x)
+* [pm2](http://pm2.keymetrics.io/)
+
+#### Front End
+* [bower](https://bower.io/)
+* [jquery](http://api.jquery.com/) (v3.x.x)
+* [bootstrap](https://getbootstrap.com/docs/4.0/) (v4.x.x)
+* [pug](https://pugjs.org)
+* [stylus](http://stylus-lang.com/)
+
+### Client Build
+
+* build (production)
+```sh
+npm run build
+```
+* build and start listening changes (production)
+```sh
+npm run builder
+```
+* build (development)
+```sh
+npm run build-dev
+```
+* build and start listening changes (development)
+```sh
+npm run builder-dev
+```
+
+### Server Start
+
+`NODE_ENV` - `production` or `development` (`development`)

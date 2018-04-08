@@ -1,0 +1,27 @@
+{
+  "name": "byteball-ico-bot-web",
+  "description": "",
+  "main": "index.js",
+  "authors": [
+    "temikng <temikng@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "3.3.1",
+    "bootstrap": "4.0.0",
+    "highcharts": "6.0.7",
+    "html5-boilerplate": "6.0.1",
+    "jquery-animateNumber": "jquery.animateNumber#0.0.14",
+    "font-awesome": "4.7.0",
+    "moment": "2.22.0",
+    "bootstrap-datepicker": "1.8.0"
+  }
+}

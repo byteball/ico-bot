@@ -20,6 +20,7 @@ const conversion = require('./modules/conversion.js');
 const Web3 = require('web3')
 const BigNumber = require('bignumber.js');
 const bitcore = require('bitcore-lib');
+const { spawn } = require('child_process');
 
 let web3;
 
@@ -447,6 +448,12 @@ eventBus.on('headless_wallet_ready', () => {
 		if (error)
 			throw new Error(error);
 
+		if (conf.webPort) {
+			//setTimeout(() => {
+				spawnWebServer();
+			//}, 1000);
+		}
+
 		setTimeout(sendMeBytes, 60 * 1000);
 		setInterval(sendMeBytes, conf.accumulationInterval * 3600 * 1000);
 
@@ -467,3 +474,20 @@ eventBus.on('headless_wallet_ready', () => {
 		}
 	});
 });
+
+function spawnWebServer() {
+	let prc = null;
+	try {
+		prc = spawn('node', ['./server/bin/www.js']);
+	} catch (e) {
+    console.error("Error trying to start web server");
+    console.error(e);
+    process.exit(1);
+	}
+	prc.stderr.on('data', (data) => {
+		console.error(`web server err data:\n${data}`);
+	});
+	prc.on('close', (code) => {
+		console.error('web server close: process exit code ' + code);
+	});
+}

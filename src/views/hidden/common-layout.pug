@@ -1,0 +1,56 @@
+extends ./layout
+
+mixin outputNavMenu(arrNavLinks, nCurrNavLink)
+	nav.nav.nav-masthead
+		each item, index in arrNavLinks
+			a.nav-link(href=item.href, class=nCurrNavLink === index ? 'active': '')= item.title
+
+append init
+	-
+		title = "ICO bot - ";
+		var arrSocialBtns = [
+			{ href: "https://twitter.com/ByteballOrg", title: "Twitter", classIcon: "fa-twitter" },
+			{ href: "https://www.facebook.com/byteball.org", title: "Facebook", classIcon: "fa-facebook" },
+			{ href: "https://bitcointalk.org/index.php?topic=1608859.0", title: "BitcoinTalk thread", classIcon: "fa-bitcoin" },
+			{ href: "https://medium.com/byteball", title: "Medium blog", classIcon: "fa-medium" },
+			{ href: "https://slack.byteball.org", title: "Slack", classIcon: "fa-slack" },
+			{ href: "https://www.reddit.com/r/ByteBall/", title: "Reddit", classIcon: "fa-reddit-alien" },
+			{ href: "https://t.me/byteball", title: "Telegram", classIcon: "fa-telegram" },
+		];
+		var arrNavLinks = [
+			{ href: "/", title: "Home" },
+			{ href: "/transactions.html", title: "Transactions" },
+			{ href: "/statistics.html", title: "Statistics" },
+		];
+		var nCurrNavLink = 0;
+
+append links
+	link(rel="icon" href="/assets/images/icon_16x16@2x.png")
+	link(rel="stylesheet" href="/assets/libs/font-awesome/css/font-awesome.min.css")
+	link(rel="stylesheet" href="/assets/css/libs/bootstrap.min.css")
+	link(rel="stylesheet" href="/assets/css/common.css")
+
+append content
+	//.d-flex.h-100.p-3.mx-auto.flex-column
+
+	header
+		//.cover-container.mx-auto
+			.inner
+		h3
+			svg.logo(height='36', width='36')
+				circle(cx='18', cy='18', r='16', stroke='#2c3e50', stroke-width='2', fill='white')
+			span Byteball ICO
+		+ outputNavMenu(arrNavLinks, nCurrNavLink)
+
+	main.inner.cover(role='main')
+		block content-main
+
+	footer
+		a(href='https://byteball.org/') byteball.org
+
+		each item in arrSocialBtns
+			a(href=item.href, title=item.title, target="_blank")
+				i.fa(class=item.classIcon)
+
+append scripts
+	script(src="/assets/js/common.js")

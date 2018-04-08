@@ -4,21 +4,37 @@
   "description": "A bot for running ICO on Byteball platform",
   "main": "ico.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "postinstall": "./node_modules/.bin/bower install",
+    "test": "make test",
+    "test-client": "karma start",
+    "build": "node ./node_modules/front-end-builder production",
+    "builder": "node ./node_modules/front-end-builder production listen",
+    "build-dev": "node ./node_modules/front-end-builder development",
+    "builder-dev": "node ./node_modules/front-end-builder development listen"
   },
   "author": "xJeneK",
   "license": "ISC",
   "dependencies": {
     "async": "^2.5.0",
     "bignumber.js": "^5.0.0",
+    "bitcoin": "^3.0.1",
+    "bitcore-lib": "^0.13.14",
     "byteballcore": "git+https://github.com/byteball/byteballcore.git",
     "emailjs": "^1.0.10",
     "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
     "lodash": "^4.6.1",
     "moment": "^2.18.1",
+    "next": "^4.0.0-beta.6",
     "request": "^2.81.0",
-	"bitcoin": "^3.0.1",
     "web3": "^1.0.0-beta.26",
-	"bitcore-lib": "^0.13.14"
+    "express": "^4.16.3",
+    "express-validator": "^5.0.3",
+    "front-end-builder": "^0.1.6",
+    "morgan": "^1.9.0",
+    "winston": "2.4.0",
+    "winston-daily-rotate-file": "1.7.2"
+  },
+  "devDependencies": {
+    "bower": "1.8.4"
   }
 }

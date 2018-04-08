@@ -1,0 +1,53 @@
+extends ./hidden/common-layout
+
+append init
+	- title += "Home";
+	- nCurrNavLink = 0;
+
+append metas
+	meta(name="keywords" content="Byteball")
+
+append links
+	link(rel="stylesheet" href="/assets/css/index.css")
+
+append content-main
+	#container-highcharts-graph(style='min-width: 310px; height: 400px; margin: 0 auto')
+	.text-center.filter-currency
+		.form-group
+			label(for='t_f_currency') currency
+			select#t_f_currency.form-control(name="f_currency", onchange="index.actions.onChangeCurrency(this)")
+				option all
+				option GBYTE
+				option BTC
+				option ETH
+				option USDT
+	.text-center
+		button#btn-count-type.btn-custom.btn-custom--types Count of transactions
+		button#btn-sum-type.btn-custom.btn-custom--types Sum of paid
+
+	.container-circle-data
+		.circle
+			span
+				.circle__title Common Sum
+				#number-sum 0
+		.circle
+			span
+				.circle__title Transactions
+				#number-transactions 0
+		.circle
+			span
+				.circle__title Users paid
+				#number-users-paid 0
+		.circle
+			span
+				.circle__title Users all
+				#number-users-all 0
+
+	//p.lead
+	//	| Maybe need to fill
+
+append scripts
+	script(src="/assets/js/libs/jquery.animateNumber.min.js")
+	script(src="/assets/js/libs/highstock.js")
+	script(src="/assets/js/libs/exporting.js")
+	script(src="/assets/js/index.js")

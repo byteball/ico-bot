@@ -1,0 +1,74 @@
+extends ./hidden/common-layout
+
+append init
+	-
+		title += "Transactions";
+		nCurrNavLink = 1;
+
+append metas
+	meta(name="keywords" content="Byteball")
+
+append links
+	link(rel="stylesheet" href="/assets/css/table.css")
+	link(rel="stylesheet" href="/assets/css/transactions.css")
+
+append content-main
+
+	form
+		fieldset Filters:
+			.row
+				.col-sm-12.col-md-6.col-lg-3
+					.form-group
+						label(for='t_f_txid') txid
+						input#t_f_txid.form-control(type='text', name="f_txid", placeholder='enter txid',
+						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
+				.col-sm-12.col-md-6.col-lg-3
+					.form-group
+						label(for='t_f_receiving_address') receiving address
+						input#t_f_receiving_address.form-control(type='text', name="f_receiving_address", placeholder='enter receiving address',
+						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
+				.col-sm-12.col-md-6.col-lg-3
+					.form-group
+						label(for='t_f_bb_address') byteball address
+						input#t_f_bb_address.form-control(type='text', name="f_bb_address", placeholder='enter bb address',
+						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
+
+				.col-sm-12.col-md-6.col-lg-3
+					.row
+						.col-sm-6
+							.form-group
+								label(for='t_f_currency') currency
+								select#t_f_currency.form-control(name="f_currency", onchange="table.actions.onChangeFilter(this)")
+									option all
+									option GBYTE
+									option BTC
+									option ETH
+									option USDT
+						.col-sm-6
+							.form-group
+								label(for='t_f_stable') stable
+								select#t_f_stable.form-control(name="f_stable", onchange="table.actions.onChangeFilter(this)")
+									option all
+									option true
+									option false
+
+	.content-table
+		table.table.table-sm.table-bordered.table-custom
+			thead#thead
+			tbody#tbody
+
+	.fixed-table-pagination
+		.pull-left.pagination-detail
+			span.page-list
+				span.btn-group.dropup
+					select#t_limit.form-control(onchange="table.actions.onChangeLimit(this)")
+						option 10
+						option 25
+						option 50
+				|  rows per page
+		.pull-right.pagination
+			ul.pagination#tpagination
+
+append scripts
+	script(src="/assets/js/table.js")
+	script(src="/assets/js/transactions.js")
