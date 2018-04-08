@@ -126,9 +126,24 @@ router.get('/statistic', [
     let arrParams = [];
 
     let strSqlWhere = '1=1';//stable = 1';
+    let nRoundDisplayDecimals = conf.tokenDisplayDecimals;
     if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
         arrParams.push(data.filter_currency);
+        switch (data.filter_currency) {
+            case 'GBYTE':
+                nRoundDisplayDecimals = 9;
+                break;
+            case 'BTC':
+                nRoundDisplayDecimals = 8;
+                break;
+            case 'ETH':
+                nRoundDisplayDecimals = 8;
+                break;
+            case 'USDT':
+                nRoundDisplayDecimals = 8;
+                break;
+        }
     }
     if (data.filter_date_from && data.filter_date_to) {
         strSqlWhere += ' AND paid_date BETWEEN ? AND ?';
@@ -138,7 +153,7 @@ router.get('/statistic', [
     const strSql = `SELECT
         date(paid_date) AS date,
         COUNT(transaction_id) AS count
-        ${(data.filter_currency && data.filter_currency!=='all') ? `, ROUND(SUM(currency_amount), ${conf.tokenDisplayDecimals}) AS sum`: ''} 
+        ${(data.filter_currency && data.filter_currency!=='all') ? `, ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum`: ''} 
     FROM transactions
     WHERE ${strSqlWhere}
     GROUP BY date
