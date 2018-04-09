@@ -11,6 +11,7 @@ class Table {
 			sort: null,
 			rows: [],
 			totalItems: 0,
+			handlePostLoadData: () => {},
 		}, options.data || {});
 		this.params = options.params;
 
@@ -46,6 +47,7 @@ class Table {
 				this.data.rows = response.rows;
 				this.data.totalItems = response.total;
 				this.data.totalRows = Math.ceil(this.data.totalItems / this.data.limit);
+				this.data.handlePostLoadData && this.data.handlePostLoadData();
 				this.createHeader();
 				this.createBody();
 				this.createPagination();
@@ -106,6 +108,7 @@ class Table {
 					if (!this.params.hasOwnProperty(key)) continue;
 					const tItem = this.params[key];
 					let val = row[key] ? row[key] : '-';
+					let attrs = {};
 					if (tItem.body) {
 						const body = tItem.body;
 						if (body.hasOwnProperty('isAvailable')) {
@@ -113,11 +116,21 @@ class Table {
 								if (!body.isAvailable()) continue;
 							} else if (!body.isAvailable) continue;
 						}
+						if (body.class) {
+							attrs.class = body.class;
+						}
 						if (body.format) {
 							val = body.format(val, row);
 						}
 					}
-					strTr += `<td>${val}</td>`;
+
+					let strAttrs = '';
+					for (let key in attrs) {
+						if (!attrs.hasOwnProperty(key)) continue;
+						strAttrs += `${key}=${attrs[key]}`;
+					}
+
+					strTr += `<td ${strAttrs}>${val}</td>`;
 				}
 
 				strTr += '</tr>';

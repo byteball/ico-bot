@@ -2,9 +2,36 @@ const $elTableHead = $('#thead');
 const $elTableBody = $('#tbody');
 const $elTablePagination = $('#tpagination');
 
+let data = {
+	maxDecCurrencyAmount: 0,
+	maxDecTokens: 0,
+};
+
 let table = new Table({
 	data: {
-		url: '/api/transactions'
+		url: '/api/transactions',
+		handlePostLoadData: () => {
+			data.maxDecCurrencyAmount = 0;
+			data.maxDecTokens = 0;
+			const rows = table.data.rows;
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				let strCurrencyAmount = '' + row.currency_amount;
+				if (strCurrencyAmount.indexOf('.') >= 0) {
+					const lengthDecCurrencyAmount = strCurrencyAmount.split('.')[1].length;
+					if (lengthDecCurrencyAmount > data.maxDecCurrencyAmount) {
+						data.maxDecCurrencyAmount = lengthDecCurrencyAmount;
+					}
+				}
+				let strTokens = '' + row.tokens;
+				if (strTokens.indexOf('.') >= 0) {
+					const lengthDecTokens = strTokens.split('.')[1].length;
+					if (lengthDecTokens > data.maxDecTokens) {
+						data.maxDecTokens = lengthDecTokens;
+					}
+				}
+			}
+		}
 	},
 	params: {
 		// 'transaction_id': {
@@ -55,9 +82,36 @@ let table = new Table({
 				sort: {
 					used: false,
 				},
+			},
+			body: {
+				class: 'dec-align',
+				format: (val) => {
+					let strVal = '' + val;
+					if (strVal.indexOf('.') >= 0) {
+						let strDec = strVal.split('.')[1];
+						strVal += ' '.repeat(data.maxDecCurrencyAmount - strDec.length);
+					} else if (data.maxDecCurrencyAmount) {
+						strVal += (' '.repeat(data.maxDecCurrencyAmount + 1));
+					}
+					return strVal;
+				}
 			}
 		},
-		'tokens': {},
+		'tokens': {
+			body: {
+				class: 'dec-align',
+				format: (val) => {
+					let strVal = '' + val;
+					if (strVal.indexOf('.') >= 0) {
+						let strDec = strVal.split('.')[1];
+						strVal += ' '.repeat(data.maxDecTokens - strDec.length);
+					} else if (data.maxDecTokens) {
+						strVal += (' '.repeat(data.maxDecTokens + 1));
+					}
+					return strVal;
+				}
+			}
+		},
 		// 'refunded': {},
 		// 'paid_out': {},
 		// 'paid_date': {},

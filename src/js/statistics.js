@@ -7,6 +7,10 @@ const $elTableHead = $('#thead');
 const $elTableBody = $('#tbody');
 // const $elTablePagination = $('#tpagination');
 
+let data = {
+	maxDecSum: 0,
+};
+
 let table = new Table({
 	data: {
 		url: '/api/statistic',
@@ -44,6 +48,20 @@ let table = new Table({
 
 				}
 			}
+		},
+		handlePostLoadData: () => {
+			data.maxDecSum = 0;
+			const rows = table.data.rows;
+			for (let i = 0; i < rows.length; i++) {
+				const row = rows[i];
+				let strSum = '' + row.sum;
+				if (strSum.indexOf('.') >= 0) {
+					const lengthDecSum = strSum.split('.')[1].length;
+					if (lengthDecSum > data.maxDecSum) {
+						data.maxDecSum = lengthDecSum;
+					}
+				}
+			}
 		}
 	},
 	params: {
@@ -54,7 +72,9 @@ let table = new Table({
 				},
 			}
 		},
-		'count': {},
+		'count': {
+			body: {}
+		},
 		'sum': {
 			head: {
 				isAvailable: () => {
@@ -64,6 +84,17 @@ let table = new Table({
 			body: {
 				isAvailable: () => {
 					return $elFilterCurrency.val() !== 'all';
+				},
+				class: 'dec-align',
+				format: (val) => {
+					let strVal = '' + val;
+					if (strVal.indexOf('.') >= 0) {
+						let strDec = strVal.split('.')[1];
+						strVal += ' '.repeat(data.maxDecSum - strDec.length);
+					} else if (data.maxDecSum) {
+						strVal += (' '.repeat(data.maxDecSum + 1));
+					}
+					return strVal;
 				}
 			}
 		},

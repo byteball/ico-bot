@@ -1,10 +1,11 @@
 
 const eventBus = require('byteballcore/event_bus.js');
-const conversion = require('./_conversion');
+const conversion = require('./conversion');
 
 let bRatesReady = false;
 
 conversion.onReady(() => {
+  console.log('########################################ß');
   bRatesReady = true;
   const headlessWallet = require('headless-byteball'); // start loading headless only when rates are ready
   checkRatesAndHeadless();
