@@ -1,13 +1,16 @@
 const conf = require('byteballcore/conf');
+const conversion = require('./../../modules/_conversion.js');
 const log = require('../libs/logger')(module);
 const appPort = conf.webPort;
 
 const {server: appServer} = require('../server');
 let appKey = 'app';
 
-appServer.listen(appPort);
-appServer.on('error', onError(appKey, appPort));
-appServer.on('listening', onListening(appKey, appServer));
+conversion.onReady(() => {
+	appServer.listen(appPort);
+	appServer.on('error', onError(appKey, appPort));
+	appServer.on('listening', onListening(appKey, appServer));	
+});
 
 process.on('unhandledRejection', onUnhandledRejection);
 

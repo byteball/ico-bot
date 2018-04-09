@@ -4,7 +4,7 @@ const db = require('byteballcore/db');
 const log = require('./../libs/logger')(module);
 const { query: checkQuery, validationResult, oneOf } = require('express-validator/check');
 const { matchedData, sanitize } = require('express-validator/filter');
-const conversion = require('./../../modules/conversion.js');
+const conversion = require('./../../modules/_conversion.js');
 
 const arrCurrencies = ['GBYTE', 'BTC', 'ETH', 'USDT'];
 
