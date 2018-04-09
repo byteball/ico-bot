@@ -84,12 +84,22 @@ router.get('/transactions', [
         strShiftDecimal += '0';
     }
     strShiftDecimal += '1';
+
+    let strSqlCaseCurrency = '';
+    for (let i = 0; i < arrCurrencies.length; i++) {
+        let strCurrency = arrCurrencies[i];
+        strSqlCaseCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount, ${getNumberRoundDisplayDecimalsOfCurrency(strCurrency)})\n`;
+    }
+
     const strSql = `SELECT
         txid,
         receiving_address,
         byteball_address,
         currency,
-        ROUND(currency_amount, ${conf.tokenDisplayDecimals}) AS currency_amount,
+        CASE currency 
+            ${strSqlCaseCurrency}
+            ELSE currency_amount
+            END AS currency_amount,
         ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
         stable,
         creation_date
@@ -130,20 +140,7 @@ router.get('/statistic', [
     if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
         arrParams.push(data.filter_currency);
-        switch (data.filter_currency) {
-            case 'GBYTE':
-                nRoundDisplayDecimals = 9;
-                break;
-            case 'BTC':
-                nRoundDisplayDecimals = 8;
-                break;
-            case 'ETH':
-                nRoundDisplayDecimals = 8;
-                break;
-            case 'USDT':
-                nRoundDisplayDecimals = 8;
-                break;
-        }
+        nRoundDisplayDecimals = getNumberRoundDisplayDecimalsOfCurrency(data.filter_currency);
     }
     if (data.filter_date_from && data.filter_date_to) {
         strSqlWhere += ' AND paid_date BETWEEN ? AND ?';
@@ -199,3 +196,17 @@ router.get('/common', (req, res) => {
 });
 
 module.exports = router;
+
+function getNumberRoundDisplayDecimalsOfCurrency(currency) {
+    switch (currency) {
+        case 'GBYTE':
+            return 9;
+        case 'BTC':
+            return 8;
+        case 'ETH':
+            return 8;
+        case 'USDT':
+            return 8;
+        default: return 8;
+    }
+}
