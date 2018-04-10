@@ -6,7 +6,7 @@ const conf = require('byteballcore/conf');
 const notifications = require('./notifications');
 
 let displayTokensMultiplier = Math.pow(10, conf.tokenDisplayDecimals);
-let handlersOnReady = [];
+let handlersOnReady = [], handlersOnceReady = [];
 
 var GBYTE_BTC_rate;
 var ETH_BTC_rate;
@@ -20,11 +20,14 @@ var USD_RUR_rate;
 var bRatesReady = false;
 
 function checkAllRatesUpdated() {
-	if (bRatesReady)
+	if (bRatesReady) {
+		handlersOnReady.forEach((handle) => { handle(); });
 		return;
+	}
 	if (GBYTE_BTC_rate && BTC_USD_rate && EUR_USD_rate) {
 		bRatesReady = true;
 		console.log('rates are ready');
+		handlersOnceReady.forEach((handle) => { handle(); });
 		handlersOnReady.forEach((handle) => { handle(); });
 	}
 }
@@ -158,4 +161,8 @@ exports.getCurrencyRate = getCurrencyRate;
 exports.onReady = (func) => {
   if (typeof func !== 'function') throw new Error('conversion onReady must be a function');
   handlersOnReady.push(func);
+};
+exports.onceReady = (func) => {
+	if (typeof func !== 'function') throw new Error('conversion onceReady must be a function');
+  handlersOnceReady.push(func);
 };

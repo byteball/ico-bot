@@ -4,7 +4,7 @@ const conversion = require('./conversion');
 
 let bRatesReady = false;
 
-conversion.onReady(() => {
+conversion.onceReady(() => {
   console.log('########################################ß');
   bRatesReady = true;
   const headlessWallet = require('headless-byteball'); // start loading headless only when rates are ready
