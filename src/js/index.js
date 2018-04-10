@@ -5,8 +5,6 @@ const objAvailableTypes = {
 	sum: 'Paid sum'
 };
 
-const $btnCountType = $('#btn-count-type');
-const $btnSumType = $('#btn-sum-type');
 const $elNumberTotalSum = $('#number-total-sum');
 const $elNumberTransactions = $('#number-transactions');
 const $elNumberUserPaid = $('#number-users-paid');
@@ -27,44 +25,6 @@ if (jsonParams.filter_currency) {
 	filter.currency = jsonParams.filter_currency;
 	$elFilterCurrency.val(jsonParams.filter_currency);
 }
-filter.currency !== 'all' ? $btnSumType.show() : $btnSumType.hide();
-
-if(window.location.hash) {
-	currType = window.location.hash.substring(1);
-	if (!objAvailableTypes.hasOwnProperty(currType)) {
-		currType = 'count';
-	}
-}
-$(`#btn-${currType}-type`).addClass('active');
-
-$btnCountType.click((event) => {
-	if (chooseType('count')) {
-		$btnCountType.addClass('active');
-		$btnSumType.removeClass('active');
-		chart.series[0].update({
-			name: objAvailableTypes[currType],
-			tooltip: {
-				valueDecimals: 0,
-				valuePrefix: null,
-				valueSuffix: null
-			}
-		});
-	}
-});
-$btnSumType.click((event) => {
-	if (chooseType('sum')) {
-		$btnSumType.addClass('active');
-		$btnCountType.removeClass('active');
-		chart.series[0].update({
-			name: objAvailableTypes[currType],
-			tooltip: {
-				valueDecimals: 2,
-				// valuePrefix: '$',
-				// valueSuffix: ' USD'
-			}
-		});
-	}
-});
 
 initChart();
 $(() => {
@@ -76,14 +36,6 @@ window.index = {
 	actions: {
 		onChangeCurrency: (el) => {
 			filter.currency = el.value;
-			if (filter.currency !== 'all') {
-				$btnSumType.show();
-			} else {
-				currType = 'count';
-				$btnCountType.addClass('active');
-				$btnSumType.removeClass('active');
-				$btnSumType.hide();
-			}
 			initIntervalToLoadChartData();
 		}
 	}
@@ -158,15 +110,18 @@ function loadChartData() {
 		.then((response) => {
 			// console.log('response', response);
 
-			let data = [];
+			let arrDataTransactions = [], arrDataSum = [];
 			const rows = response.rows;
 			const lengthRows = rows.length;
 			for (let i = 0; i < lengthRows; i++) {
 				const row = rows[i];
-				data.push([ (new Date(row.date)).getTime(), row[currType] ]);
+				const time = (new Date(row.date)).getTime();
+				arrDataTransactions.push([ time, row.count ]);
+				arrDataSum.push([ time, row.usd_sum ]);
 			}
 
-			chart.series[0].setData(data);
+			chart.series[0].setData(arrDataTransactions);
+			chart.series[1].setData(arrDataSum);
 		}) // then
 		.fail(handleAjaxError)
 		.always(() => {
@@ -319,7 +274,7 @@ function initChart() {
 			text: 'ICO bot statistic'
 		},
 
-		xAxis: {
+		xAxis: [{
 			events: {
 				setExtremes: (e) => {
 					// console.log('click', e.trigger, e);
@@ -328,13 +283,65 @@ function initChart() {
 					}
 				}
 			}
+		}],
+		yAxis: [{
+			allowDecimals: false,
+			title: {
+				text: 'Count of transactions',
+				style: {
+					color: "#007bff"
+				}
+			},
+			labels: {
+				style: {
+					color: "#007bff"
+				}
+			},
+			opposite: false
+		}, {
+			labels: {
+				format: '${value}',
+				style: {
+					color: "#ff9f00"
+				}
+			},
+			title: {
+				text: 'Sum of paid',
+				style: {
+					color: "#ff9f00"
+				}
+			},
+		}],
+
+		tooltip: {
+			shared: true
+		},
+		legend: {
+			layout: 'vertical',
+			align: 'left',
+			x: 80,
+			verticalAlign: 'top',
+			y: 55,
+			floating: true,
+			backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
 		},
 
 		series: [{
-			name: objAvailableTypes[currType],
+			name: 'Count of transactions',
 			data: [],
+			yAxis: 0,
 			tooltip: {},
 			color: "#007bff"
+		}, {
+			name: 'Sum of paid',
+			data: [],
+			yAxis: 1,
+			tooltip: {
+				valueDecimals: 2,
+				valuePrefix: '$',
+				// valueSuffix: ' USD'
+			},
+			color: "#ff9f00"
 		}]
 	});
 }
