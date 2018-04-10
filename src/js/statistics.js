@@ -9,6 +9,7 @@ const $elTableBody = $('#tbody');
 
 let data = {
 	maxDecSum: 0,
+	maxDecUsdSum: 0,
 };
 
 let table = new Table({
@@ -54,11 +55,20 @@ let table = new Table({
 			const rows = table.data.rows;
 			for (let i = 0; i < rows.length; i++) {
 				const row = rows[i];
+				
 				let strSum = '' + row.sum;
 				if (strSum.indexOf('.') >= 0) {
 					const lengthDecSum = strSum.split('.')[1].length;
 					if (lengthDecSum > data.maxDecSum) {
 						data.maxDecSum = lengthDecSum;
+					}
+				}
+
+				let strUsdSum = '' + row.usd_sum;
+				if (strUsdSum.indexOf('.') >= 0) {
+					const lengthDecUsdSum = strUsdSum.split('.')[1].length;
+					if (lengthDecUsdSum > data.maxDecUsdSum) {
+						data.maxDecUsdSum = lengthDecUsdSum;
 					}
 				}
 			}
@@ -73,7 +83,9 @@ let table = new Table({
 			}
 		},
 		'count': {
-			body: {}
+			body: {
+				class: 'dec-align',
+			}
 		},
 		'sum': {
 			head: {
@@ -86,16 +98,22 @@ let table = new Table({
 					return $elFilterCurrency.val() !== 'all';
 				},
 				class: 'dec-align',
-				format: (val) => {
-					let strVal = '' + val;
-					if (strVal.indexOf('.') >= 0) {
-						let strDec = strVal.split('.')[1];
-						strVal += ' '.repeat(data.maxDecSum - strDec.length);
-					} else if (data.maxDecSum) {
-						strVal += (' '.repeat(data.maxDecSum + 1));
-					}
-					return strVal;
+				format: Table.getFormatFunctionForDecField(data, 'maxDecSum'),
+			}
+		},
+		'usd_sum': {
+			head: {
+				title: '$ sum',
+				isAvailable: () => {
+					return $elFilterCurrency.val() !== 'all';
 				}
+			},
+			body: {
+				isAvailable: () => {
+					return $elFilterCurrency.val() !== 'all';
+				},
+				class: 'dec-align',
+				format: Table.getFormatFunctionForDecField(data, 'maxDecUsdSum'),
 			}
 		},
 	}

@@ -19,6 +19,11 @@ append content-main
 			.row
 				.col-sm-12.col-md-6.col-lg-3
 					.form-group
+						label(for='filter_bb_address') byteball address
+						input#t_f_bb_address.form-control(type='text', name="filter_bb_address", placeholder='enter bb address',
+						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
+				.col-sm-12.col-md-6.col-lg-3
+					.form-group
 						label(for='filter_txid') txid
 						input#filter_txid.form-control(type='text', name="filter_txid", placeholder='enter txid',
 						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
@@ -26,11 +31,6 @@ append content-main
 					.form-group
 						label(for='filter_receiving_address') receiving address
 						input#filter_receiving_address.form-control(type='text', name="filter_receiving_address", placeholder='enter receiving address',
-						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
-				.col-sm-12.col-md-6.col-lg-3
-					.form-group
-						label(for='filter_bb_address') byteball address
-						input#t_f_bb_address.form-control(type='text', name="filter_bb_address", placeholder='enter bb address',
 						onblur="table.actions.onChangeFilter(this)", onkeypress="table.actions.onKeyEnter(event)")
 
 				.col-sm-12.col-md-6.col-lg-3

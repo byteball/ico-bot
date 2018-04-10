@@ -86,9 +86,12 @@ router.get('/transactions', [
     strShiftDecimal += '1';
 
     let strSqlCaseCurrency = '';
+    let strSqlCaseUsdCurrency = '';
     for (let i = 0; i < arrCurrencies.length; i++) {
         let strCurrency = arrCurrencies[i];
+        let currencyRate = strCurrency!=='USDT' ? conversion.getCurrencyRate(strCurrency, 'USD') : 1;
         strSqlCaseCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount, ${getNumberRoundDisplayDecimalsOfCurrency(strCurrency)})\n`;
+        strSqlCaseUsdCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount * ${currencyRate}, ${conf.tokenDisplayDecimals})\n`;
     }
 
     const strSql = `SELECT
@@ -100,6 +103,10 @@ router.get('/transactions', [
             ${strSqlCaseCurrency}
             ELSE currency_amount
             END AS currency_amount,
+        CASE currency
+            ${strSqlCaseUsdCurrency}
+            ELSE currency_amount
+            END AS usd_amount,
         ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
         stable,
         creation_date
@@ -147,10 +154,22 @@ router.get('/statistic', [
         arrParams.push(data.filter_date_from, data.filter_date_to);
     }
 
+    const filter_currency = data.filter_currency;
+    const isFilterCurrency = filter_currency && filter_currency!=='all';
+    
+    let nCurrencyRate = 1;
+    if (isFilterCurrency && filter_currency !== 'USDT') {
+        nCurrencyRate = conversion.getCurrencyRate(filter_currency, 'USD');
+    }
+    
     const strSql = `SELECT
         date(paid_date) AS date,
         COUNT(transaction_id) AS count
-        ${(data.filter_currency && data.filter_currency!=='all') ? `, ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum`: ''} 
+        ${
+            (isFilterCurrency) ? 
+            `, ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum
+            , ROUND(SUM(currency_amount) * ${nCurrencyRate}, ${conf.tokenDisplayDecimals}) AS usd_sum`
+            : ''} 
     FROM transactions
     WHERE ${strSqlWhere}
     GROUP BY date

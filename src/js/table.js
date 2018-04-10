@@ -234,7 +234,7 @@ class Table {
 		}
 
 		for (let key in jsonParams) {
-			if (!jsonParams.hasOwnProperty(key) || key.indexOf('f_') !== 0) continue;
+			if (!jsonParams.hasOwnProperty(key) || key.indexOf('filter_') !== 0) continue;
 			let value = jsonParams[key];
 
 			let prevValue;
@@ -269,6 +269,21 @@ class Table {
 		}
 
 		return bWereChanged;
+	}
+
+	static getFormatFunctionForDecField(obj, maxLengthProperty) {
+		return (val) => {
+			let maxLength = obj[maxLengthProperty];
+			let strVal = '' + val;
+			if (strVal.indexOf('.') >= 0) {
+				let strDec = strVal.split('.')[1];
+				console.log('getFormatFunctionForDecField', maxLength, strVal, strDec);
+				strVal += ' '.repeat(maxLength - strDec.length);
+			} else if (maxLength) {
+				strVal += (' '.repeat(maxLength + 1));
+			}
+			return strVal;
+		}
 	}
 }
 
