@@ -142,7 +142,7 @@ router.get('/statistic', [
 
     let arrParams = [];
 
-    let strSqlWhere = '1=1';//stable = 1';
+    let strSqlWhere = 'stable = 1';
     let nRoundDisplayDecimals = conf.tokenDisplayDecimals;
     if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
