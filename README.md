@@ -99,23 +99,23 @@ Start Main network node
 $ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=1024 --syncmode light
 ```
 
-## Web server
+# Web server
 
-### Environment
+## Environment
 
-#### Back End
+### Back End
 * [node.js](https://nodejs.org/en/) (v8.x.x)
 * [sqlite](https://www.postgresql.org/) (v3.x.x)
 * [pm2](http://pm2.keymetrics.io/)
 
-#### Front End
+### Front End
 * [bower](https://bower.io/)
 * [jquery](http://api.jquery.com/) (v3.x.x)
 * [bootstrap](https://getbootstrap.com/docs/4.0/) (v4.x.x)
 * [pug](https://pugjs.org)
 * [stylus](http://stylus-lang.com/)
 
-### Client Build
+## Client Build
 
 * build (production)
 ```sh
@@ -134,6 +134,116 @@ npm run build-dev
 npm run builder-dev
 ```
 
-### Server Start
+## Server Start
 
 `NODE_ENV` - `production` or `development` (`development`)
+
+# Server API
+
+## List of transactions
+
+**URL** : `/api/transactions`
+
+**Method** : `GET`
+
+**Query parameters** :
+
+ * `page=[integer]`  
+ min=1  
+ default=1
+ * `limit=[integer]`  
+ min=1, max=100  
+ default=10
+ * `sort=[string]`  
+ one of ['currency_amount', 'creation_date']  
+ default='creation_date'
+ * `filter_stable=[string]`  
+ one of ['all', 'true', 'false']  
+ default='all'
+ * `filter_currency=[string]`  
+ one of ['all', 'GBYTE', 'BTC', 'ETH', 'USDT']  
+ default='all'  
+ * `filter_bb_address=[string]`  
+ * `filter_receiving_address=[string]`  
+ * `filter_txid=[string]`  
+
+**Response** :
+
+```json
+{ 
+  "rows": [{
+    "txid": [string],
+    "receiving_address": [string],
+    "byteball_address": [string],
+    "currency": [string],
+    "currency_amount": [decimal],
+    "usd_amount": [decimal],
+    "tokens": [integer],
+    "stable": [integer],
+    "creation_date": [string]
+  }, ...],
+  "total": [integer]
+}
+```
+
+## Statistic
+
+**URL** : `/api/statistic`
+
+**Method** : `GET`
+
+**Query parameters** :
+
+ * `filter_currency=[string]`  
+ one of ['all', 'GBYTE', 'BTC', 'ETH', 'USDT']  
+ default='all'  
+ * `filter_date_from=[string]`
+ * `filter_date_to=[string]`
+
+**Response** :
+
+```json
+{
+  "rows": [{
+    "date": [string], 
+    "count": [integer],
+    "sum": [decimal],
+    "usd_sum": [decimal]
+  }, ...]
+}
+```
+
+## Common data
+
+**URL** : `/api/common`
+
+**Method** : `GET`
+
+**Query parameters** : -
+
+**Response** :
+
+```json
+{
+  "count_transactions": [integer],
+  "users_all": [integer],
+  "users_paid": [integer],
+  "total_sum": [decimal]
+}
+```
+
+## Init data
+
+**URL** : `/api/init`
+
+**Method** : `GET`
+
+**Query parameters** : -
+
+**Response** :
+
+```json
+{
+  "tokenName": [string]
+}
+```
