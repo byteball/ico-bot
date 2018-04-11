@@ -169,7 +169,7 @@ npm run builder-dev
 
 **Response** :
 
-```json
+```
 { 
   "rows": [{
     "txid": [string],
@@ -202,7 +202,7 @@ npm run builder-dev
 
 **Response** :
 
-```json
+```
 {
   "rows": [{
     "date": [string], 
@@ -223,7 +223,7 @@ npm run builder-dev
 
 **Response** :
 
-```json
+```
 {
   "count_transactions": [integer],
   "users_all": [integer],
@@ -242,7 +242,7 @@ npm run builder-dev
 
 **Response** :
 
-```json
+```
 {
   "tokenName": [string]
 }

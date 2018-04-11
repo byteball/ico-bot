@@ -104,14 +104,8 @@ let table = new Table({
 		'usd_sum': {
 			head: {
 				title: '$ sum',
-				isAvailable: () => {
-					return $elFilterCurrency.val() !== 'all';
-				}
 			},
 			body: {
-				isAvailable: () => {
-					return $elFilterCurrency.val() !== 'all';
-				},
 				class: 'dec-align',
 				format: Table.getFormatFunctionForDecField(data, 'maxDecUsdSum'),
 			}
