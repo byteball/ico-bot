@@ -123,3 +123,4 @@ exports.webSSL = {
 	key: null,
 	crt: null,
 };
+exports.bCorsEnabled = false;
