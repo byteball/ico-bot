@@ -89,9 +89,9 @@ router.get('/transactions', [
     let strSqlCaseUsdCurrency = '';
     for (let i = 0; i < arrCurrencies.length; i++) {
         let strCurrency = arrCurrencies[i];
-        let currencyRate = strCurrency!=='USDT' ? conversion.getCurrencyRate(strCurrency, 'USD') : 1;
+        let currencyRate = conversion.getCurrencyRate(strCurrency, 'USD');
         strSqlCaseCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount, ${getNumberRoundDisplayDecimalsOfCurrency(strCurrency)})\n`;
-        strSqlCaseUsdCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount * ${currencyRate}, ${conf.tokenDisplayDecimals})\n`;
+        strSqlCaseUsdCurrency += `WHEN '${strCurrency}' THEN ROUND(currency_amount * ${currencyRate}, 2)\n`;
     }
 
     const strSql = `SELECT
@@ -142,7 +142,7 @@ router.get('/statistic', [
 
     let arrParams = [];
 
-    let strSqlWhere = 'stable = 1';
+    let strSqlWhere = '1=1';//stable = 1';
     let nRoundDisplayDecimals = conf.tokenDisplayDecimals;
     if (data.filter_currency && data.filter_currency !== 'all') {
         strSqlWhere += ' AND currency = ?';
@@ -157,20 +157,36 @@ router.get('/statistic', [
     const filter_currency = data.filter_currency;
     const isFilterCurrency = filter_currency && filter_currency!=='all';
     
-    let nCurrencyRate = 1;
-    if (isFilterCurrency && filter_currency !== 'USDT') {
-        nCurrencyRate = conversion.getCurrencyRate(filter_currency, 'USD');
-    }
-    
     const strSql = `SELECT
         date(paid_date) AS date,
         COUNT(transaction_id) AS count
         ${
             (isFilterCurrency) ? 
             `, ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum
-            , ROUND(SUM(currency_amount) * ${nCurrencyRate}, ${conf.tokenDisplayDecimals}) AS usd_sum`
-            : ''} 
-    FROM transactions
+            , ROUND(SUM(currency_amount) * ${conversion.getCurrencyRate(filter_currency, 'USD')}, 2) AS usd_sum`
+            : 
+            (() => {
+                let str = `, ROUND(
+                    (SELECT
+                        SUM(transactions_usd_sum.usd_sum) AS sum
+                    FROM (
+                        SELECT 
+                            CASE currency\n`;
+                for (let i = 0; i < arrCurrencies.length; i++) {
+                    let strCurrency = arrCurrencies[i];
+                    let currencyRate = conversion.getCurrencyRate(strCurrency, 'USD');
+                    str += `WHEN '${strCurrency}' THEN SUM(currency_amount) * ${currencyRate}\n`;
+                }
+                str += `    ELSE SUM(currency_amount)
+                            END AS usd_sum 
+                        FROM transactions
+                        WHERE date(paid_date) = date(transactions_main.paid_date)
+                        GROUP BY currency
+                    ) AS transactions_usd_sum), 2) AS usd_sum\n`;
+                return str;
+            })()
+        } 
+    FROM transactions AS transactions_main
     WHERE ${strSqlWhere}
     GROUP BY date
     ORDER BY date ASC`;
@@ -208,7 +224,7 @@ router.get('/common', (req, res) => {
 
         db.query(strSql, arrParams, (rows) => {
             let row = rows[0];
-            row.total_sum = parseFloat(totalSum.toFixed(conf.tokenDisplayDecimals));
+            row.total_sum = parseFloat(totalSum.toFixed(2));
             res.status(200).json(row);
         });
     });

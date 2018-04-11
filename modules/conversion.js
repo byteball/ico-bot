@@ -100,6 +100,9 @@ function updateBittrexRates() {
 }
 
 function getCurrencyRate(currency1, currency2) {
+	if (currency2 === 'USD' && currency1 === 'USDT') {
+		return 1;
+	}
 	return getCurrencyRateOfGB(currency2) / getCurrencyRateOfGB(currency1);
 }
 

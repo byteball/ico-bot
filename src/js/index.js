@@ -110,18 +110,29 @@ function loadChartData() {
 		.then((response) => {
 			// console.log('response', response);
 
-			let arrDataTransactions = [], arrDataSum = [];
+			let arrDataTransactions = [], arrDataUsdSum = [], arrDataSum = [];
 			const rows = response.rows;
 			const lengthRows = rows.length;
 			for (let i = 0; i < lengthRows; i++) {
 				const row = rows[i];
 				const time = (new Date(row.date)).getTime();
 				arrDataTransactions.push([ time, row.count ]);
-				arrDataSum.push([ time, row.usd_sum ]);
+				arrDataUsdSum.push([ time, row.usd_sum ]);
+				arrDataSum.push([ time, row.sum ]);
 			}
 
 			chart.series[0].setData(arrDataTransactions);
-			chart.series[1].setData(arrDataSum);
+			chart.series[1].setData(arrDataUsdSum);
+			chart.series[2].setData(arrDataSum);
+
+			chart.yAxis[2].update({
+				title: {
+					text: filter.currency !== 'all' ? `${filter.currency} sum of paid` : ''
+				}
+			});
+			chart.series[2].update({
+				name: filter.currency !== 'all' ? `${filter.currency} sum of paid` : ''
+			});
 		}) // then
 		.fail(handleAjaxError)
 		.always(() => {
@@ -299,6 +310,7 @@ function initChart() {
 			},
 			opposite: false
 		}, {
+			allowDecimals: false,
 			labels: {
 				format: '${value}',
 				style: {
@@ -306,9 +318,21 @@ function initChart() {
 				}
 			},
 			title: {
-				text: 'Sum of paid',
+				text: 'USD sum of paid',
 				style: {
 					color: "#ff9f00"
+				}
+			},
+		}, {
+			allowDecimals: false,
+			labels: {
+				style: {
+					color: "#434348"
+				}
+			},
+			title: {
+				style: {
+					color: "#434348"
 				}
 			},
 		}],
@@ -333,7 +357,7 @@ function initChart() {
 			tooltip: {},
 			color: "#007bff"
 		}, {
-			name: 'Sum of paid',
+			name: 'USD sum of paid',
 			data: [],
 			yAxis: 1,
 			tooltip: {
@@ -342,6 +366,11 @@ function initChart() {
 				// valueSuffix: ' USD'
 			},
 			color: "#ff9f00"
+		}, {
+			data: [],
+			yAxis: 2,
+			tooltip: {},
+			color: "#434348"
 		}]
 	});
 }
