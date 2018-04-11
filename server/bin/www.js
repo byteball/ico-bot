@@ -6,11 +6,9 @@ const appPort = conf.webPort;
 const {server: appServer} = require('../server');
 let appKey = 'app';
 
-conversion.onReady(() => {
-	appServer.listen(appPort);
-	appServer.on('error', onError(appKey, appPort));
-	appServer.on('listening', onListening(appKey, appServer));
-});	
+appServer.listen(appPort);
+appServer.on('error', onError(appKey, appPort));
+appServer.on('listening', onListening(appKey, appServer));
 
 process.on('unhandledRejection', onUnhandledRejection);
 
