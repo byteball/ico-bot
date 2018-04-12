@@ -1,3 +1,4 @@
+const _MS_PER_DAY = 1000 * 60 * 60 * 24;
 const timerLoadChartData = 60000;
 const timerLoadCommonData = 60000;
 const objAvailableTypes = {
@@ -111,14 +112,36 @@ function loadChartData() {
 			// console.log('response', response);
 
 			let arrDataTransactions = [], arrDataUsdSum = [], arrDataSum = [];
+			let dateCurr, datePrev;
+
 			const rows = response.rows;
 			const lengthRows = rows.length;
 			for (let i = 0; i < lengthRows; i++) {
 				const row = rows[i];
-				const time = (new Date(row.date)).getTime();
-				arrDataTransactions.push([ time, row.count ]);
-				arrDataUsdSum.push([ time, row.usd_sum ]);
-				arrDataSum.push([ time, row.sum ]);
+				dateCurr = new Date(row.date);
+
+				if (datePrev) {
+					const diffInDays = dateDiffInDays(datePrev, dateCurr);
+					if (diffInDays > 1) {
+						const fakeRow = {count: 0, usd_sum: 0, sum: filter.currency !== 'all' ? 0 : undefined };
+						if (diffInDays === 2) {
+							const dateMiddle = new Date(dateCurr);
+							dateMiddle.setDate(dateMiddle.getDate() - 1);
+							addDataToArrays(dateMiddle.getTime(), fakeRow);
+						} else {
+							let date = new Date(datePrev);
+							date.setDate(date.getDate() + 1);
+							addDataToArrays(date.getTime(), fakeRow);
+							date = new Date(dateCurr);
+							date.setDate(date.getDate() - 1);
+							addDataToArrays(date.getTime(), fakeRow);
+						}
+					}
+				}
+
+				addDataToArrays(dateCurr.getTime(), row);
+
+				datePrev = dateCurr;
 			}
 
 			chart.series[0].setData(arrDataTransactions);
@@ -133,6 +156,12 @@ function loadChartData() {
 			chart.series[2].update({
 				name: filter.currency !== 'all' ? `${filter.currency} sum of paid` : ''
 			});
+
+			function addDataToArrays(time, row) {
+				arrDataTransactions.push([ time, row.count ]);
+				arrDataUsdSum.push([ time, row.usd_sum ]);
+				arrDataSum.push([ time, row.sum ]);
+			}
 		}) // then
 		.fail(handleAjaxError)
 		.always(() => {
@@ -373,4 +402,13 @@ function initChart() {
 			color: "#434348"
 		}]
 	});
+}
+
+// a and b are javascript Date objects
+function dateDiffInDays(a, b) {
+  // Discard the time and time-zone information.
+  const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+  return Math.floor((utc2 - utc1) / _MS_PER_DAY);
 }
