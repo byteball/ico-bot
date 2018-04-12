@@ -124,16 +124,9 @@ function loadChartData() {
 					const diffInDays = dateDiffInDays(datePrev, dateCurr);
 					if (diffInDays > 1) {
 						const fakeRow = {count: 0, usd_sum: 0, sum: filter.currency !== 'all' ? 0 : undefined };
-						if (diffInDays === 2) {
-							const dateMiddle = new Date(dateCurr);
-							dateMiddle.setDate(dateMiddle.getDate() - 1);
-							addDataToArrays(dateMiddle.getTime(), fakeRow);
-						} else {
+						for (let i = 1; i < diffInDays; i++) {
 							let date = new Date(datePrev);
-							date.setDate(date.getDate() + 1);
-							addDataToArrays(date.getTime(), fakeRow);
-							date = new Date(dateCurr);
-							date.setDate(date.getDate() - 1);
+							date.setDate(date.getDate() + i);
 							addDataToArrays(date.getTime(), fakeRow);
 						}
 					}
