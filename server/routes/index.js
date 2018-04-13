@@ -241,7 +241,7 @@ function getNumberRoundDisplayDecimalsOfCurrency(currency) {
         case 'ETH':
             return 8;
         case 'USDT':
-            return 8;
+            return 2;
         default: return 8;
     }
 }
