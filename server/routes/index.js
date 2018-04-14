@@ -181,20 +181,20 @@ router.get('/statistic', [
             strSqlCase += `WHEN '${strCurrency}' THEN ${currencyRate}\n`;
         }
         strSql = `SELECT
-        date(paid_date) AS date,
-        COUNT(transaction_id) AS count,
-        ROUND(
-            SUM(currency_amount * (
-                CASE currency 
-                    ${strSqlCase}
-                    ELSE 1
-                END
-            ))
-        , 2) AS usd_sum
-    FROM transactions AS transactions_main
-    WHERE ${strSqlWhere}
-    GROUP BY date
-    ORDER BY date ASC`;
+            date(paid_date) AS date,
+            COUNT(transaction_id) AS count,
+            ROUND(
+                SUM(currency_amount * (
+                    CASE currency 
+                        ${strSqlCase}
+                        ELSE 1
+                    END
+                ))
+            , 2) AS usd_sum
+        FROM transactions AS transactions_main
+        WHERE ${strSqlWhere}
+        GROUP BY date
+        ORDER BY date ASC`;
     }
 
     log.verbose(strSql);
