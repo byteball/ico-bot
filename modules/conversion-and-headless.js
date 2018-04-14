@@ -5,9 +5,9 @@ const conversion = require('./conversion');
 let bRatesReady = false;
 
 conversion.onReady(() => {
-  bRatesReady = true;
-  const headlessWallet = require('headless-byteball'); // start loading headless only when rates are ready
-  checkRatesAndHeadless();
+	bRatesReady = true;
+	const headlessWallet = require('headless-byteball'); // start loading headless only when rates are ready
+	checkRatesAndHeadless();
 });
 
 var bHeadlessReady = false;
@@ -18,8 +18,8 @@ eventBus.once('headless_wallet_ready', () => {
 
 function checkRatesAndHeadless() {
 	if (bRatesReady && bHeadlessReady) {
-    eventBus.emit('headless_and_rates_ready');
-  }
+		eventBus.emit('headless_and_rates_ready');
+	}
 }
 
 module.exports = conversion;

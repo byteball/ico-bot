@@ -160,6 +160,6 @@ exports.enableRateUpdates = enableRateUpdates;
 exports.displayTokensMultiplier = displayTokensMultiplier;
 exports.getCurrencyRate = getCurrencyRate;
 exports.onReady = (func) => {
-  if (typeof func !== 'function') throw new Error('conversion onReady must be a function');
-  handlersOnReady.push(func);
+	if (typeof func !== 'function') throw new Error('conversion onReady must be a function');
+	handlersOnReady.push(func);
 };
