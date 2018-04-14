@@ -3,10 +3,10 @@
 const async = require('async');
 const request = require('request');
 const conf = require('byteballcore/conf');
-const eventBus = require('byteballcore/event_bus.js');
 const notifications = require('./notifications');
 
 let displayTokensMultiplier = Math.pow(10, conf.tokenDisplayDecimals);
+let handlersOnReady = [];
 
 var GBYTE_BTC_rate;
 var ETH_BTC_rate;
@@ -20,25 +20,14 @@ var USD_RUR_rate;
 var bRatesReady = false;
 
 function checkAllRatesUpdated() {
-	if (bRatesReady)
+	if (bRatesReady) {
 		return;
+	}
 	if (GBYTE_BTC_rate && BTC_USD_rate && EUR_USD_rate) {
 		bRatesReady = true;
 		console.log('rates are ready');
-		const headlessWallet = require('headless-byteball'); // start loading headless only when rates are ready
-		checkRatesAndHeadless();
+		handlersOnReady.forEach((handle) => { handle(); });
 	}
-}
-
-var bHeadlessReady = false;
-eventBus.once('headless_wallet_ready', () => {
-	bHeadlessReady = true;
-	checkRatesAndHeadless();
-});
-
-function checkRatesAndHeadless() {
-	if (bRatesReady && bHeadlessReady)
-		eventBus.emit('headless_and_rates_ready');
 }
 
 function updateYahooRates() {
@@ -109,6 +98,9 @@ function updateBittrexRates() {
 }
 
 function getCurrencyRate(currency1, currency2) {
+	if (currency2 === 'USD' && currency1 === 'USDT') {
+		return 1;
+	}
 	return getCurrencyRateOfGB(currency2) / getCurrencyRateOfGB(currency1);
 }
 
@@ -166,4 +158,8 @@ updateBittrexRates();
 exports.convertCurrencyToTokens = convertCurrencyToTokens;
 exports.enableRateUpdates = enableRateUpdates;
 exports.displayTokensMultiplier = displayTokensMultiplier;
-
+exports.getCurrencyRate = getCurrencyRate;
+exports.onReady = (func) => {
+  if (typeof func !== 'function') throw new Error('conversion onReady must be a function');
+  handlersOnReady.push(func);
+};

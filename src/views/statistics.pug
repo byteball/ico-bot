@@ -1,0 +1,47 @@
+extends ./hidden/common-layout
+
+append init
+	- title += "Statistics";
+	- nCurrNavLink = 2;
+
+append metas
+	meta(name="keywords" content="Byteball")
+
+append links
+	link(rel="stylesheet" href="/assets/css/libs/bootstrap-datepicker.min.css")
+	link(rel="stylesheet" href="/assets/css/table.css")
+	link(rel="stylesheet" href="/assets/css/statistics.css")
+
+append content-main
+
+	form
+		fieldset Filters:
+			.row
+				.col-sm-12.col-md-4
+					.form-group
+						label(for='filter_currency') currency
+						select#filter_currency.form-control(name="filter_currency", onchange="table.actions.onChangeFilter(this)")
+							option all
+							option GBYTE
+							option BTC
+							option ETH
+							option USDT
+				.col-sm-12.col-md-4
+					.form-group
+						label(for='filter_date_from') date from
+						input#filter_date_from.form-control(type="text", name="date_from", placeholder="MM/DD/YYYY")
+				.col-sm-12.col-md-4
+					.form-group
+						label(for='filter_date_to') date to
+						input#filter_date_to.form-control(type="text", name="date_to", placeholder="MM/DD/YYYY")
+
+	.content-table
+		table.table.table-sm.table-bordered.table-striped.table-custom
+			thead#thead
+			tbody#tbody
+
+append scripts
+	script(src="/assets/js/libs/moment.min.js")
+	script(src="/assets/js/libs/bootstrap-datepicker.min.js")
+	script(src="/assets/js/table.js")
+	script(src="/assets/js/statistics.js")

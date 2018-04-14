@@ -16,10 +16,11 @@ const ethereum_ins = require('./modules/ethereum_ins');
 const bitcoin_ins = require('./modules/bitcoin_ins');
 const bitcoinClient = require('./modules/bitcoin_client.js');
 const bitcoinApi = require('./modules/bitcoin_api.js');
-const conversion = require('./modules/conversion.js');
-const Web3 = require('web3')
+const conversion = require('./modules/conversion-and-headless.js');
+const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const bitcore = require('bitcore-lib');
+const { spawn } = require('child_process');
 
 let web3;
 
@@ -447,6 +448,12 @@ eventBus.on('headless_wallet_ready', () => {
 		if (error)
 			throw new Error(error);
 
+		if (conf.webPort) {
+			setTimeout(() => {
+				spawnWebServer();
+			}, 3000);
+		}
+
 		setTimeout(sendMeBytes, 60 * 1000);
 		setInterval(sendMeBytes, conf.accumulationInterval * 3600 * 1000);
 
@@ -467,3 +474,35 @@ eventBus.on('headless_wallet_ready', () => {
 		}
 	});
 });
+
+function spawnWebServer() {
+	let prc = null;
+	try {
+		prc = spawn('node', ['./server/bin/www.js']);
+	} catch (e) {
+    console.error("Error trying to start web server");
+    console.error(e);
+    process.exit(1);
+	}
+	prc.stderr.on('data', (data) => {
+		console.error(`web server err data:\n${data}`);
+	});
+	prc.on('close', (code) => {
+		console.error('web server close: process exit code ' + code);
+	});
+
+	//do something when app is closing
+	process.on('exit', handleExit);
+
+	//catches ctrl+c event
+	process.on('SIGINT', handleExit);
+
+	// catches "kill pid" (for example: nodemon restart)
+	process.on('SIGUSR1', handleExit);
+	process.on('SIGUSR2', handleExit);
+
+	function handleExit() {
+		prc && prc.kill('SIGINT');
+	}
+
+}

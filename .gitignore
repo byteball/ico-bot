@@ -44,8 +44,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 ### Node template
-# Logs
-logs
+
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -103,6 +102,14 @@ typings/
 # dotenv environment variables file
 .env
 
+.idea
+.DS_Store
 
-.idea/
+public
+src/bower
+tmp
+
 package-lock.json
+yarn.lock
+yarn-error.log
+errlog

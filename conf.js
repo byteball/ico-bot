@@ -116,3 +116,11 @@ exports.arrRequiredPersonalData = ['first_name', 'last_name', 'country', 'dob', 
 exports.bRequireNonUs = false;
 exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
 
+// web server
+exports.webPort = 8080;
+exports.webSSL = {
+	use: false,
+	key: null,
+	crt: null,
+};
+exports.bCorsEnabled = false;
