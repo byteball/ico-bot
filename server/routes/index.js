@@ -80,12 +80,6 @@ router.get('/transactions', [
 	FROM transactions
 	WHERE ${strSqlWhere}`;
 
-	let strShiftDecimal = '0.';
-	for (let i = 1; i < conf.tokenDisplayDecimals; i++) {
-		strShiftDecimal += '0';
-	}
-	strShiftDecimal += '1';
-
 	let strSqlCaseCurrency = '';
 	let strSqlCaseUsdCurrency = '';
 	for (let i = 0; i < arrCurrencies.length; i++) {
@@ -108,7 +102,7 @@ router.get('/transactions', [
 			${strSqlCaseUsdCurrency}
 			ELSE currency_amount
 			END AS usd_amount,
-		ROUND(tokens * ${strShiftDecimal}, ${conf.tokenDisplayDecimals}) AS tokens,
+		ROUND(tokens * ${Math.pow(10, -conf.tokenDisplayDecimals)}, ${conf.tokenDisplayDecimals}) AS tokens,
 		stable,
 		creation_date
 	FROM transactions
