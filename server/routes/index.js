@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const moment = require('moment');
 const conf = require('byteballcore/conf');
 const db = require('byteballcore/db');
 const log = require('./../libs/logger')(module);
@@ -151,45 +152,60 @@ router.get('/statistic', [
     }
     if (data.filter_date_from && data.filter_date_to) {
         strSqlWhere += ' AND paid_date BETWEEN ? AND ?';
-        arrParams.push(data.filter_date_from, data.filter_date_to);
+        arrParams.push(
+            moment(data.filter_date_from).format('YYYY-MM-DD 00:00:01'), 
+            moment(data.filter_date_to).format('YYYY-MM-DD 23:59:59')
+        );
     }
 
     const filter_currency = data.filter_currency;
     const isFilterCurrency = filter_currency && filter_currency!=='all';
     
-    const strSql = `SELECT
-        date(paid_date) AS date,
-        COUNT(transaction_id) AS count
-        ${
-            (isFilterCurrency) ? 
-            `, ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum
-            , ROUND(SUM(currency_amount) * ${conversion.getCurrencyRate(filter_currency, 'USD')}, 2) AS usd_sum`
-            : 
-            (() => {
-                let str = `, ROUND(
-                    (SELECT
-                        SUM(transactions_usd_sum.usd_sum) AS sum
-                    FROM (
-                        SELECT 
-                            CASE currency\n`;
-                for (let i = 0; i < arrCurrencies.length; i++) {
-                    let strCurrency = arrCurrencies[i];
-                    let currencyRate = conversion.getCurrencyRate(strCurrency, 'USD');
-                    str += `WHEN '${strCurrency}' THEN SUM(currency_amount) * ${currencyRate}\n`;
-                }
-                str += `    ELSE SUM(currency_amount)
-                            END AS usd_sum 
-                        FROM transactions
-                        WHERE date(paid_date) = date(transactions_main.paid_date)
-                        GROUP BY currency
-                    ) AS transactions_usd_sum), 2) AS usd_sum\n`;
-                return str;
-            })()
-        } 
-    FROM transactions AS transactions_main
-    WHERE ${strSqlWhere}
-    GROUP BY date
-    ORDER BY date ASC`;
+    let strSql;
+
+    if (isFilterCurrency) {
+        strSql = `SELECT
+            date(paid_date) AS date,
+            COUNT(transaction_id) AS count,
+            ROUND(SUM(currency_amount), ${nRoundDisplayDecimals}) AS sum,
+            ROUND(SUM(currency_amount) * ${conversion.getCurrencyRate(filter_currency, 'USD')}, 2) AS usd_sum
+        FROM transactions AS transactions_main
+        WHERE ${strSqlWhere}
+        GROUP BY date
+        ORDER BY date ASC`;
+    } else {
+        let strSqlCase = '';
+        for (let i = 0; i < arrCurrencies.length; i++) {
+            let strCurrency = arrCurrencies[i];
+            let currencyRate = conversion.getCurrencyRate(strCurrency, 'USD');
+            strSqlCase += `WHEN '${strCurrency}' THEN SUM(currency_amount) * ${currencyRate}\n`;
+        }
+        strSql = `SELECT
+            trans.p_date AS date,
+            COUNT(transaction_id) AS count,
+            ROUND(trans.sum, 2) AS usd_sum
+        FROM transactions
+        JOIN (
+            SELECT
+                transactions_currencies_usd_sum.p_date,
+                SUM(transactions_currencies_usd_sum.usd_sum) AS sum
+            FROM (
+                SELECT 
+                    date(paid_date) AS p_date,
+                    currency,
+                    CASE currency 
+                        ${strSqlCase}
+                        ELSE SUM(currency_amount)
+                    END AS usd_sum 
+                FROM transactions
+                GROUP BY p_date, currency
+            ) AS transactions_currencies_usd_sum
+            GROUP BY transactions_currencies_usd_sum.p_date
+        ) AS trans ON paid_date >= strftime('%Y-%m-%d 00:00:01', trans.p_date)
+            AND paid_date < strftime('%Y-%m-%d 00:00:01', datetime(trans.p_date, '+1 days'))
+        WHERE ${strSqlWhere}
+        GROUP BY date`;
+    }
 
     log.verbose(strSql);
     log.verbose(arrParams);

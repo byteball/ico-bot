@@ -373,12 +373,20 @@ function initChart() {
 		},
 
 		series: [{
+			marker: {
+				enabled: true,
+				radius: 2
+			},
 			name: 'Count of transactions',
 			data: [],
 			yAxis: 0,
 			tooltip: {},
 			color: "#007bff"
 		}, {
+			marker: {
+				enabled: true,
+				radius: 2
+			},
 			name: 'USD sum of paid',
 			data: [],
 			yAxis: 1,
@@ -389,6 +397,10 @@ function initChart() {
 			},
 			color: "#ff9f00"
 		}, {
+			marker: {
+				enabled: true,
+				radius: 2
+			},
 			data: [],
 			yAxis: 2,
 			tooltip: {},
