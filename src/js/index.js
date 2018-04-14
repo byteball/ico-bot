@@ -147,7 +147,7 @@ function loadChartData() {
 				}
 			});
 			chart.series[2].update({
-				name: filter.currency !== 'all' ? `${filter.currency} sum of paid` : ''
+				name: filter.currency !== 'all' ? `${filter.currency} sum of paid` : 'empty'
 			});
 
 			function addDataToArrays(time, row) {
@@ -207,7 +207,7 @@ function initChart() {
 				color: '#A0A0A0'
 			},
 			itemHoverStyle: {
-				color: '#FFF'
+				color: '#000'
 			},
 			itemHiddenStyle: {
 				color: '#444'
@@ -363,13 +363,14 @@ function initChart() {
 			shared: true
 		},
 		legend: {
-			layout: 'vertical',
+			layout: 'horizontal',
 			align: 'left',
-			x: 80,
+			//x: 80,
 			verticalAlign: 'top',
-			y: 55,
+			//y: 55,
 			floating: true,
-			backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
+			enabled: true,
+			//backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'
 		},
 
 		series: [{

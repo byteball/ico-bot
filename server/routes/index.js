@@ -178,33 +178,23 @@ router.get('/statistic', [
         for (let i = 0; i < arrCurrencies.length; i++) {
             let strCurrency = arrCurrencies[i];
             let currencyRate = conversion.getCurrencyRate(strCurrency, 'USD');
-            strSqlCase += `WHEN '${strCurrency}' THEN SUM(currency_amount) * ${currencyRate}\n`;
+            strSqlCase += `WHEN '${strCurrency}' THEN ${currencyRate}\n`;
         }
         strSql = `SELECT
-            trans.p_date AS date,
-            COUNT(transaction_id) AS count,
-            ROUND(trans.sum, 2) AS usd_sum
-        FROM transactions
-        JOIN (
-            SELECT
-                transactions_currencies_usd_sum.p_date,
-                SUM(transactions_currencies_usd_sum.usd_sum) AS sum
-            FROM (
-                SELECT 
-                    date(paid_date) AS p_date,
-                    currency,
-                    CASE currency 
-                        ${strSqlCase}
-                        ELSE SUM(currency_amount)
-                    END AS usd_sum 
-                FROM transactions
-                GROUP BY p_date, currency
-            ) AS transactions_currencies_usd_sum
-            GROUP BY transactions_currencies_usd_sum.p_date
-        ) AS trans ON paid_date >= strftime('%Y-%m-%d 00:00:01', trans.p_date)
-            AND paid_date < strftime('%Y-%m-%d 00:00:01', datetime(trans.p_date, '+1 days'))
-        WHERE ${strSqlWhere}
-        GROUP BY date`;
+        date(paid_date) AS date,
+        COUNT(transaction_id) AS count,
+        ROUND(
+            SUM(currency_amount * (
+                CASE currency 
+                    ${strSqlCase}
+                    ELSE 1
+                END
+            ))
+        , 2) AS usd_sum
+    FROM transactions AS transactions_main
+    WHERE ${strSqlWhere}
+    GROUP BY date
+    ORDER BY date ASC`;
     }
 
     log.verbose(strSql);
