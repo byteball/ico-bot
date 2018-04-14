@@ -304,7 +304,7 @@ function initChart() {
 		},
 
 		title: {
-			text: 'ICO bot statistic'
+			text: 'ICO stats'
 		},
 
 		xAxis: [{

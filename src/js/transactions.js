@@ -86,7 +86,7 @@ let table = new Table({
 		},
 		'byteball_address': {
 			head: {
-				title: 'bb address',
+				title: 'investor bb address',
 			}
 		},
 		'txid': {
