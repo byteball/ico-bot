@@ -16,7 +16,7 @@ app.use(morgan.err);
 app.use(morgan.out);
 
 if (conf.bCorsEnabled) {
-  app.use(cors());
+	app.use(cors());
 }
 // api routes
 app.use('/api', routes);
