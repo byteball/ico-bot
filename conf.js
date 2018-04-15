@@ -118,9 +118,5 @@ exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
 
 // web server
 exports.webPort = 8080;
-exports.webSSL = {
-	use: false,
-	key: null,
-	crt: null,
-};
+exports.bUseSSL = false; // if set to true, add key.pem and cert.pem files in the app data directory
 exports.bCorsEnabled = false;
