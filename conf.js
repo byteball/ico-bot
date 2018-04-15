@@ -118,5 +118,13 @@ exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
 
 // web server
 exports.webPort = 8080;
+// usually you don't need to enable SSL in node.js as nginx takes care of it
 exports.bUseSSL = false; // if set to true, add key.pem and cert.pem files in the app data directory
 exports.bCorsEnabled = false;
+
+
+// admin
+
+// these device addresses are allowed to edit prices
+exports.arrAdminAddresses = null;
+//exports.arrAdminAddresses = ["07SSQSWYYRSJZKQMBQW6FKGLSLLT73A7I", "0JSGWWSE6IGEMMTHGYHQV7VCAQU43IIWA"];

@@ -28,9 +28,10 @@ Edit `conf.js` or `conf.json` to describe the properties of your token and token
 * `rulesOfDistributionOfTokens`: `real-time` for sending tokens immediately after the payment is confirmed, `one-time` for collecting investments during the ICO, and then sending tokens to all investors in one go when the ICO is over.
 * `totalTokens`: total number of smallest indivisible units (pennies) of the newly issued token.
 * `tokenDisplayDecimals`: number of decimals in user-displayed amounts of the token.  Total supply in user-displayed units is `totalTokens / 10^tokenDisplayDecimals`.
-* `assocPrices`: prices of your token depending on the payment currency.  The prices can be pegged to another currency, such as USD, in this case the prices in payment currency are periodically updated using exchange feeds.
+* `assocPrices`: prices of your token depending on the payment currency.  The prices can be pegged to another currency, such as USD, in this case the prices in payment currency are periodically updated using exchange feeds.  Note that the prices are per smallest indivisible unit of your token, they are different from prices per user-displayed token by `tokenDisplayDecimals` decimal places.
 * `startDate` and `endDate`: start and end dates of the crowdsale.
 * `accumulationAddresses`: all collected funds are periodically swept to these addresses (one address per currency), it is recommended that these addresses are better secured by being multisig or offline.
+* `arrAdminAddresses`: array of device addresses of admins.  Only admins can change the price of your token by giving commands to the bot in chat interface (see below).  If you don't want to change the price via chat, leave this field empty.
 
 Chat with the bot, learn its address and pay a small amount (at least 10000 bytes) to fund asset issuance.  You’ll see the balance only when it is fully synced.
 
@@ -47,6 +48,10 @@ When issuance is done, run
 node ico.js 2>errlog
 ```
 Thereafter, you start the daemon only with ico.js.  Now, the bot is ready to accept payments.
+
+If you want to change the price of your token, you have two options:
+* ssh to your server and edit conf.json.  Note that the price stored in conf.json is the price per smallest indivisible unit of your token, which is `tokenDisplayDecimals` decimal places different from the price displayed to the users.  After editing the conf, restart your bot for the changes to take effect.
+* if you enabled `arrAdminAddresses` in your conf (see above), any of the admins can chat with the bot and change the price by sending `set price <new price>` command to the bot (type `admin` to be reminded about the format of the command).  The price is per user-displayed token.  Any changes are effective immediately without restart.  This command edits your conf.json, so the new price is remembered even if the bot is restarted.
 
 ### After the ICO
 

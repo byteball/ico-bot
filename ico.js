@@ -21,6 +21,8 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const bitcore = require('bitcore-lib');
 const { spawn } = require('child_process');
+const fs = require('fs');
+const desktopApp = require('byteballcore/desktop_app.js');
 
 let web3;
 
@@ -74,6 +76,16 @@ function sendTokensToUser(objPayment) {
 	});
 }
 
+function updatePricesInConf(){
+	var appDataDir = desktopApp.getAppDataDir();
+	var userConfFile = appDataDir + '/conf.json';
+	var json = require(userConfFile);
+	json.assocPrices = conf.assocPrices;
+	fs.writeFile(userConfFile, JSON.stringify(json, null, '\t'), 'utf8', function(err){
+		if (err)
+			throw Error('failed to write conf.json: '+err);
+	});
+}
 
 eventBus.on('paired', from_address => {
 	let device = require('byteballcore/device.js');
@@ -95,6 +107,22 @@ eventBus.once('headless_and_rates_ready', () => {
 		text = text.trim();
 		let ucText = text.toUpperCase();
 		let lcText = text.toLowerCase();
+		
+		if (conf.arrAdminAddresses && conf.arrAdminAddresses.indexOf(from_address) >= 0){
+			let objPrice = conf.assocPrices['all'];
+			if (objPrice){
+				if (lcText === 'admin')
+					return device.sendMessageToDevice(from_address, 'text', 'Admin commands:\nset price <new price of '+conf.tokenName+' in '+objPrice.price_currency+'>\n(current price is '+(objPrice.price * conversion.displayTokensMultiplier)+')');
+				let arrMatches = lcText.match(/set\s+price\s+([\d.]+)/);
+				if (arrMatches){
+					let display_price = parseFloat(arrMatches[1]);
+					let price = display_price / conversion.displayTokensMultiplier;
+					objPrice.price = price;
+					updatePricesInConf();
+					return device.sendMessageToDevice(from_address, 'text', 'The price is set to '+display_price+" "+conf.tokenName+"/"+objPrice.price_currency);
+				}
+			}
+		}
 
 		if (moment() < moment(conf.startDate, 'DD.MM.YYYY hh:mm'))
 			return device.sendMessageToDevice(from_address, 'text', 'The ICO has not begun yet.');
