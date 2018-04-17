@@ -1,3 +1,5 @@
+![ICO Bot with Web server](ico-stats.png)
+
 # ICO Bot with Web server
 
 This bot allows to run an ICO on Byteball network.  It accepts Bytes, BTC, and Ether from users and sends back the new tokens in exchange.  You set the prices relative to USD or other fiat or crypto currencies. 
@@ -106,6 +108,13 @@ $ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=102
 
 # Web server
 
+A web server that shows stats of the ongoing ICO is started automatically when you start `ico.js`.  The server listens on port 8080 by default.  You usually want to proxy the web traffic to the server via nginx.
+
+You can also start the server separately of `oco.js`:
+```
+node server/bin/www.js
+```
+
 ## Environment
 
 ### Back End
@@ -121,6 +130,8 @@ $ geth --ws --wsorigins "*" --wsapi "admin,db,eth,net,web3,personal" --cache=102
 * [stylus](http://stylus-lang.com/)
 
 ## Client Build
+
+Please run one of these commands before starting the web server and after each update.
 
 * build (production)
 ```sh
@@ -144,6 +155,8 @@ npm run builder-dev
 `NODE_ENV` - `production` or `development` (`development`)
 
 # Server API
+
+Use these endpoints if you want to display ICO data on another website or want to fetch the data from another server.
 
 ## List of transactions
 
