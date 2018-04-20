@@ -116,6 +116,9 @@ exports.arrRequiredPersonalData = ['first_name', 'last_name', 'country', 'dob', 
 exports.bRequireNonUs = false;
 exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
 
+exports.bRequireAccredited = false;
+exports.arrAccreditedAttestors = ['BVVJ2K7ENPZZ3VYZFWQWK7ISPCATFIW3'];
+
 // web server
 exports.webPort = 8080;
 // usually you don't need to enable SSL in node.js as nginx takes care of it

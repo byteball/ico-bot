@@ -36,11 +36,15 @@ if (conf.ethEnabled) {
 	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
 }
 
-if (conf.bLight && conf.bRequireNonUs){ // add the attestor address to 'my' addresses in order to receive all attestations
+if (conf.bLight && (conf.bRequireNonUs || conf.bRequireAccredited)){ // add the attestor address to 'my' addresses in order to receive all attestations
 	var originalReadMyAddresses = walletGeneral.readMyAddresses;
 	walletGeneral.readMyAddresses = function(handleAddresses){
 		originalReadMyAddresses(function(arrAddresses){
-			handleAddresses(arrAddresses.concat(conf.arrNonUsAttestors));
+			if (conf.bRequireNonUs)
+				arrAddresses = arrAddresses.concat(conf.arrNonUsAttestors);
+			if (conf.bRequireAccredited)
+				arrAddresses = arrAddresses.concat(conf.arrAccreditedAttestors);
+			handleAddresses(arrAddresses);
 		});
 	};
 }
@@ -145,18 +149,32 @@ eventBus.once('headless_and_rates_ready', () => {
 						}
 					);
 				}
-				if (!conf.bRequireNonUs)
-					return saveByteballAddress();
 				// check non-US attestation
-				db.query(
-					"SELECT 1 FROM attestations CROSS JOIN unit_authors USING(unit) WHERE attestations.address=? AND unit_authors.address IN(?)", 
-					[address, conf.arrNonUsAttestors],
-					rows => {
-						if (rows.length === 0)
-							return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents but the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
-						saveByteballAddress();
-					}
-				);
+				if (conf.bRequireNonUs){
+					db.query(
+						"SELECT 1 FROM attestations CROSS JOIN unit_authors USING(unit) WHERE attestations.address=? AND unit_authors.address IN(?)", 
+						[address, conf.arrNonUsAttestors],
+						rows => {
+							if (rows.length === 0)
+								return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents but the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
+							saveByteballAddress();
+						}
+					);
+				}
+				// check accredited investor
+				else if (conf.bRequireAccredited){
+					db.query(
+						"SELECT 1 FROM attestations CROSS JOIN unit_authors USING(unit) WHERE attestations.address=? AND unit_authors.address IN(?)", 
+						[address, conf.arrAccreditedAttestors],
+						rows => {
+							if (rows.length === 0)
+								return device.sendMessageToDevice(from_address, 'text', 'This token is available only to accredited investors but the address you provided is not attested as belonging to an accredited investor.  If you are an accredited investor and have already attested another address, please use the attested address.  If you are an accredited investor and didn\'t attest yet, find "Accredited investor attestation bot" in the Bot Store and have your address attested.');
+							saveByteballAddress();
+						}
+					);
+				}
+				else
+					saveByteballAddress();
 			}
 			
 			if (validationUtils.isValidAddress(ucText)) {
@@ -508,9 +526,9 @@ function spawnWebServer() {
 	try {
 		prc = spawn('node', ['./server/bin/www.js']);
 	} catch (e) {
-    console.error("Error trying to start web server");
-    console.error(e);
-    process.exit(1);
+		console.error("Error trying to start web server");
+		console.error(e);
+		process.exit(1);
 	}
 	prc.stderr.on('data', (data) => {
 		console.error(`web server err data:\n${data}`);
