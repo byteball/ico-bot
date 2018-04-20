@@ -27,6 +27,7 @@ Edit `conf.js` or `conf.json` to describe the properties of your token and token
 
 * `bRequireRealName`: to require KYC.
 * `bRequireNonUs`: to allow only non-US investors.
+* `bRequireAccredited`: to allow only accredited investors.
 * `rulesOfDistributionOfTokens`: `real-time` for sending tokens immediately after the payment is confirmed, `one-time` for collecting investments during the ICO, and then sending tokens to all investors in one go when the ICO is over.
 * `totalTokens`: total number of smallest indivisible units (pennies) of the newly issued token.
 * `tokenDisplayDecimals`: number of decimals in user-displayed amounts of the token.  Total supply in user-displayed units is `totalTokens / 10^tokenDisplayDecimals`.
