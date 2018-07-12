@@ -107,6 +107,21 @@ exports.assocPrices = {
 };
 */
 
+
+// discounts for attested users, uncomment and edit to apply
+/*
+exports.discounts = {
+	JEDZYC2HMGDBIDQKG3XSTXUSHMCBK725: {
+		domain: 'Steem',
+		discount_levels: [
+			{reputation: 50, discount: 10},
+			{reputation: 60, discount: 20},
+			{reputation: 70, discount: 30},
+		]
+	},
+};
+*/
+
 exports.bRefundPossible = true;
 
 exports.bRequireRealName = false;

@@ -24,12 +24,31 @@ function getPrices(){
 	return arrPrices.join("\n");
 }
 
+function getDiscountLevels(){
+	let arrAttestorSections = [];
+	for (let attestor_address in conf.discounts){
+		let objAttestor = conf.discounts[attestor_address];
+		let field;
+		for (let key in objAttestor.discount_levels[0])
+			if (key !== 'discount')
+				field = key;
+		let arrLines = objAttestor.discount_levels.map(objLevel => {
+			return field+" "+objLevel[field]+" and more: "+objLevel.discount+"% discount";
+		});
+		arrAttestorSections.push(objAttestor.domain+" attestations:\n"+arrLines.join("\n"));
+	}
+	return arrAttestorSections.join("\n\n");
+}
+
 function capitalizeFirstLetter(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
 exports.greeting = () => {
-	return "Here you can buy "+conf.tokenName+" tokens.  The price of 1 "+conf.tokenName+" is:\n"+getPrices();
+	let response = "Here you can buy "+conf.tokenName+" tokens.  The price of 1 "+conf.tokenName+" is:\n"+getPrices()+".";
+	if (conf.discounts)
+		response += "\n\nDiscounts apply if you use an attested address to buy the tokens and have a high enough rank:\n\n"+getDiscountLevels();
+	return response;
 };
 
 exports.howmany = () => {
@@ -40,6 +59,14 @@ exports.insertMyAddress = () => {
 	return conf.bRequireRealName
 		? 'To participate in this ICO, your real name has to be attested and we require to provide your private profile, which includes your first name, last name, country, date of birth, and ID number.  If you are not attested yet, find "Real name attestation bot" in the Bot Store and have your address attested.  If you are already attested, click this link to reveal your private profile to us: [profile request](profile-request:'+conf.arrRequiredPersonalData.join(',')+').  We\'ll keep your personal data private and will not share it with anybody except as required by law.'
 		: 'Please send me your address where you wish to receive the tokens (click ... and Insert my address).';
+};
+
+exports.discount = (objDiscount) => {
+	return "As a "+objDiscount.domain+" user with "+objDiscount.field+" over "+objDiscount.threshold_value+" you are eligible to discount of "+objDiscount.discount+"% after successful payment.";
+};
+
+exports.includesDiscount = (objDiscount) => {
+	return "The price includes a "+objDiscount.discount+"% discount which you receive as a "+objDiscount.domain+" user with "+objDiscount.field+" over "+objDiscount.threshold_value+".";
 };
 
 exports.paymentConfirmed = () => {

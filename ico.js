@@ -17,6 +17,7 @@ const bitcoin_ins = require('./modules/bitcoin_ins');
 const bitcoinClient = require('./modules/bitcoin_client.js');
 const bitcoinApi = require('./modules/bitcoin_api.js');
 const conversion = require('./modules/conversion-and-headless.js');
+const discounts = require('./modules/discounts.js');
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const bitcore = require('bitcore-lib');
@@ -91,6 +92,15 @@ function updatePricesInConf(){
 	});
 }
 
+async function convertCurrencyToTokensWithDiscount(byteball_address, amount, currency){
+	let objDiscount = await discounts.getDiscount(byteball_address);
+	let tokens = conversion.convertCurrencyToTokens(amount, currency);
+	tokens = Math.round(tokens / (1-objDiscount.discount/100));
+	let objTokensWithDiscount = objDiscount;
+	objTokensWithDiscount.tokens = tokens;
+	return objTokensWithDiscount;
+}
+
 eventBus.on('paired', from_address => {
 	let device = require('byteballcore/device.js');
 	var text = texts.greeting();
@@ -135,8 +145,8 @@ eventBus.once('headless_and_rates_ready', () => {
 
 		let arrProfileMatches = text.match(/\(profile:(.+?)\)/);
 		
-		checkUserAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
-			if (!bByteballAddressKnown && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
+		checkUserAdress(from_address, 'BYTEBALL', async (byteball_address) => {
+			if (!byteball_address && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			
 			function handleUserAddress(address, bWithData){
@@ -144,8 +154,11 @@ eventBus.once('headless_and_rates_ready', () => {
 					db.query(
 						'INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', 
 						[from_address, 'BYTEBALL', address], 
-						() => {
+						async () => {
 							device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address'+(bWithData ? ' and personal data' : '')+'.\n\n' + texts.howmany());
+							let objDiscount = await discounts.getDiscount(address);
+							if (objDiscount.discount)
+								device.sendMessageToDevice(from_address, 'text', texts.discount(objDiscount));
 						}
 					);
 				}
@@ -218,32 +231,40 @@ eventBus.once('headless_and_rates_ready', () => {
 				let currency = ucText.match(/[A-Z]+$/)[0];
 				if (amount < 0.000000001)
 					return device.sendMessageToDevice(from_address, 'text', 'Min amount 0.000000001');
-				let tokens, display_tokens;
+				let objTokensWithDiscount, tokens, display_tokens;
 				switch (currency) {
 					case 'GB':
 					case 'GBYTE':
 						let bytes = Math.round(amount * 1e9);
-						tokens = conversion.convertCurrencyToTokens(amount, 'GBYTE');
+						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(byteball_address, amount, 'GBYTE');
+						tokens = objTokensWithDiscount.tokens;
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
 						display_tokens = tokens / conversion.displayTokensMultiplier;
 						byteball_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
-							device.sendMessageToDevice(from_address, 'text', 'You buy: ' + display_tokens + ' ' + conf.tokenName +
-								'\n[' + ucText + '](byteball:' + receiving_address + '?amount=' + bytes + ')');
+							let response = 'You buy: ' + display_tokens + ' ' + conf.tokenName +
+								'\n[' + ucText + '](byteball:' + receiving_address + '?amount=' + bytes + ')';
+							if (objTokensWithDiscount.discount)
+								response += "\n\n"+texts.includesDiscount(objTokensWithDiscount);
+							device.sendMessageToDevice(from_address, 'text', response);
 						});
 						break;
 					case 'ETHER':
 						currency = 'ETH';
 					case 'ETH':
 					case 'BTC':
-						tokens = conversion.convertCurrencyToTokens(amount, currency);
+						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(byteball_address, amount, currency);
+						tokens = objTokensWithDiscount.tokens;
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
 						display_tokens = tokens / conversion.displayTokensMultiplier;
 						let currency_ins = (currency === 'BTC') ? bitcoin_ins : ethereum_ins;
 						currency_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
-							device.sendMessageToDevice(from_address, 'text', 'You buy: ' + display_tokens + ' ' + conf.tokenName +
-								'\nPlease send ' + amount + ' ' + currency + ' to ' + receiving_address);
+							let response = 'You buy: ' + display_tokens + ' ' + conf.tokenName + '.' +
+								'\nPlease send ' + amount + ' ' + currency + ' to ' + receiving_address;
+							if (objTokensWithDiscount.discount)
+								response += "\n\n"+texts.includesDiscount(objTokensWithDiscount);
+							device.sendMessageToDevice(from_address, 'text', response);
 						})
 						break;
 					case 'USDT':
@@ -257,7 +278,7 @@ eventBus.once('headless_and_rates_ready', () => {
 			}
 
 			let response = texts.greeting();
-			if (bByteballAddressKnown)
+			if (byteball_address)
 				response += "\n\n" + texts.howmany();
 			else
 				response += "\n\n" + texts.insertMyAddress();
@@ -289,7 +310,7 @@ function checkAndPayNotPaidTransactions() {
 function checkUserAdress(device_address, platform, cb) {
 	db.query("SELECT address FROM user_addresses WHERE device_address = ? AND platform = ?", [device_address, platform.toUpperCase()], rows => {
 		if (rows.length) {
-			cb(true)
+			cb(rows[0].address)
 		} else {
 			cb(false)
 		}
@@ -402,7 +423,7 @@ eventBus.on('in_transaction_stable', tx => {
 	let device = require('byteballcore/device');
 	const mutex = require('byteballcore/mutex');
 	mutex.lock(['tx-' + tx.txid], unlock => {
-		db.query("SELECT stable FROM transactions WHERE txid = ? AND receiving_address=?", [tx.txid, tx.receiving_address], rows => {
+		db.query("SELECT stable FROM transactions WHERE txid = ? AND receiving_address=?", [tx.txid, tx.receiving_address], async (rows) => {
 			if (rows.length > 1)
 				throw Error("non unique");
 			if (rows.length && rows[0].stable) return;
@@ -421,7 +442,8 @@ eventBus.on('in_transaction_stable', tx => {
 				);
 			}
 			else {
-				let tokens = conversion.convertCurrencyToTokens(tx.currency_amount, tx.currency); // might throw if called before the rates are ready
+				let objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(tx.byteball_address, tx.currency_amount, tx.currency); // might throw if called before the rates are ready
+				let tokens = objTokensWithDiscount.tokens;
 				if (tokens === 0) {
 					unlock();
 					if (tx.device_address)
