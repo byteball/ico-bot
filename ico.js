@@ -37,18 +37,6 @@ if (conf.ethEnabled) {
 	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
 }
 
-if (conf.bLight && (conf.bRequireNonUs || conf.bRequireAccredited)){ // add the attestor address to 'my' addresses in order to receive all attestations
-	var originalReadMyAddresses = walletGeneral.readMyAddresses;
-	walletGeneral.readMyAddresses = function(handleAddresses){
-		originalReadMyAddresses(function(arrAddresses){
-			if (conf.bRequireNonUs)
-				arrAddresses = arrAddresses.concat(conf.arrNonUsAttestors);
-			if (conf.bRequireAccredited)
-				arrAddresses = arrAddresses.concat(conf.arrAccreditedAttestors);
-			handleAddresses(arrAddresses);
-		});
-	};
-}
 
 conversion.enableRateUpdates();
 
@@ -149,7 +137,7 @@ eventBus.once('headless_and_rates_ready', () => {
 			if (!byteball_address && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			
-			function handleUserAddress(address, bWithData){
+			async function handleUserAddress(address, bWithData){
 				function saveByteballAddress(){
 					db.query(
 						'INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', 
@@ -161,6 +149,10 @@ eventBus.once('headless_and_rates_ready', () => {
 								device.sendMessageToDevice(from_address, 'text', texts.discount(objDiscount));
 						}
 					);
+				}
+				if (conf.bLight && (conf.bRequireNonUs || conf.bRequireAccredited)){
+					const light_attestations = require('./modules/light_attestations.js');
+					await light_attestations.updateAttestationsInLight(byteball_address);
 				}
 				// check non-US attestation
 				if (conf.bRequireNonUs){
