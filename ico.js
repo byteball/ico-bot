@@ -30,6 +30,8 @@ let web3;
 const bTestnet = constants.version.match(/t$/);
 const bitcoinNetwork = bTestnet ? bitcore.Networks.testnet : bitcore.Networks.livenet;
 
+process.on('unhandledRejection', up => { throw up; });
+
 if (!conf.issued_asset)
 	throw Error("please isssue the asset first by running scripts/issue_tokens.js");
 
