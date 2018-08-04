@@ -6,7 +6,6 @@ const eventBus = require('byteballcore/event_bus');
 const conf = require('byteballcore/conf');
 const async = require('async');
 const conversion = require('../modules/conversion.js');
-const split = require('../modules/split.js');
 
 var change_address;
 
@@ -14,20 +13,8 @@ if (conf.rulesOfDistributionOfTokens !== 'one-time')
 	throw Error('must be one-time');
 
 function run(){
-	async.series([splitOutputs, readStaticChangeAddress, calcTokens, runOneTimeDistribution], () => {
+	async.series([readStaticChangeAddress, calcTokens, runOneTimeDistribution], () => {
 		console.error('==== Finished');
-	});
-}
-
-function splitOutputs(onDone){
-	split.checkAndSplitLargestOutput(conf.issued_asset, err => {
-		if (err)
-			throw Error('split '+conf.issued_asset+' failed: '+err);
-		split.checkAndSplitLargestOutput(null, err => {
-			if (err)
-				throw Error('split bytes failed: '+err);
-			onDone();
-		});
 	});
 }
 

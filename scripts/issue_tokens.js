@@ -83,21 +83,13 @@ function issueAsset(){
 	const divisibleAsset = require('byteballcore/divisible_asset.js');
 	const network = require('byteballcore/network');
 
-	// when issuing, we also split the asset into 100 outputs for parallel payouts
-	const COUNT_CHUNKS = 100;
-	let chunk_amount = Math.round(conf.totalTokens/COUNT_CHUNKS);
-	let arrOutputs = [];
-	for (var i=1; i<COUNT_CHUNKS; i++) // 99 iterations
-		arrOutputs.push({amount: chunk_amount, address: myAddress});
-
 	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
 		asset: conf.issued_asset,
 		paying_addresses: [myAddress],
 		fee_paying_addresses: [myAddress],
 		change_address: myAddress,
-	//	to_address: myAddress,
-	//	amount: conf.totalTokens,
-		asset_outputs: arrOutputs,
+		to_address: myAddress,
+		amount: conf.totalTokens,
 		signer: headlessWallet.signer,
 		callbacks: {
 			ifError: onError,

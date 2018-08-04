@@ -2,7 +2,6 @@
 'use strict';
 const db = require('byteballcore/db');
 const eventBus = require('byteballcore/event_bus');
-const split = require('../modules/split.js');
 const async = require('async');
 const conf = require('byteballcore/conf');
 const Web3 = require('web3');
@@ -17,7 +16,7 @@ if(conf.ethEnabled)
 let change_address;
 
 function run() {
-	async.series([splitOutputs, readStaticChangeAddress, refundBytes], (err) => {
+	async.series([readStaticChangeAddress, refundBytes], (err) => {
 		if (err) return console.error(err);
 		console.error('==== Byteball Finished');
 	});
@@ -29,12 +28,6 @@ function run() {
 	}
 }
 
-function splitOutputs(onDone) {
-	split.checkAndSplitLargestOutput(null, err => {
-		if (err) return onDone('split bytes failed: ' + err);
-		onDone();
-	});
-}
 
 function readStaticChangeAddress(onDone) {
 	const headlessWallet = require('headless-byteball');
