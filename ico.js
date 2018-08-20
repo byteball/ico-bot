@@ -154,7 +154,7 @@ eventBus.once('headless_and_rates_ready', () => {
 				}
 				if (conf.bLight && (conf.bRequireNonUs || conf.bRequireAccredited)){
 					const light_attestations = require('./modules/light_attestations.js');
-					await light_attestations.updateAttestationsInLight(byteball_address);
+					await light_attestations.updateAttestationsInLight(address);
 				}
 				// check non-US attestation
 				if (conf.bRequireNonUs){
