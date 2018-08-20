@@ -47,7 +47,7 @@ function capitalizeFirstLetter(string) {
 exports.greeting = () => {
 	let response = "Here you can buy "+conf.tokenName+" tokens.  The price of 1 "+conf.tokenName+" is:\n"+getPrices()+".";
 	if (conf.discounts)
-		response += "\n\nDiscounts apply if you use an attested address to buy the tokens and have a high enough rank:\n\n"+getDiscountLevels();
+		response += "\n\nDiscounts apply if you use a publicly attested address to buy the tokens and have a high enough rank:\n\n"+getDiscountLevels();
 	return response;
 };
 
