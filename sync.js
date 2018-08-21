@@ -33,6 +33,11 @@ eventBus.on('headless_wallet_ready', () => {
 
 		if (error)
 			throw new Error(error);
+		
+		if (conf.bStaticChangeAddress)
+			headlessWallet.issueOrSelectStaticChangeAddress(address => {
+				console.log('==== static change address '+address);
+			});
 
 	});
 });
