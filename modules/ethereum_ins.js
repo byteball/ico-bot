@@ -85,20 +85,22 @@ if (conf.ethEnabled) {
 	}, 10000);
 }
 
-setInterval(async () => {
-	if (needRescan) {
-		if (!(await web3.eth.isSyncing()) && !rescanning) {
-			rescanning = true;
-			await startScan().catch(e => {console.error(e)});
-			rescanning = false;
-			needRescan = false;
+if (conf.ethEnabled) {
+	setInterval(async () => {
+		if (needRescan) {
+			if (!(await web3.eth.isSyncing()) && !rescanning) {
+				rescanning = true;
+				await startScan().catch(e => {console.error(e)});
+				rescanning = false;
+				needRescan = false;
+			}
+		} else {
+			if (await web3.eth.isSyncing()) {
+				needRescan = true;
+			}
 		}
-	} else {
-		if (await web3.eth.isSyncing()) {
-			needRescan = true;
-		}
-	}
-}, 60000);
+	}, 60000);
+}
 
 exports.startScan = startScan;
 
