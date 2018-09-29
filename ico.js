@@ -9,7 +9,6 @@ const eventBus = require('byteballcore/event_bus');
 const texts = require('./texts');
 const validationUtils = require('byteballcore/validation_utils');
 const privateProfile = require('byteballcore/private_profile.js');
-const walletGeneral = require('byteballcore/wallet_general.js');
 const notifications = require('./modules/notifications');
 const byteball_ins = require('./modules/byteball_ins');
 const ethereum_ins = require('./modules/ethereum_ins');
