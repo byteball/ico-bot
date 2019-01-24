@@ -87,7 +87,7 @@ function refundBytes(onDone) {
 function refundEther() {
 	const device = require('byteballcore/device.js');
 	return new Promise((resolve, reject) => {
-		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 GROUP BY receiving_address", async (rows) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 AND user_addresses.platform='ETEREUM' GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
 				console.error('==== ETH nothing to refund');
 				return resolve();
@@ -123,7 +123,7 @@ function refundBtc(onDone) {
 	db.query(
 		"SELECT transaction_id, currency_amount, user_addresses.address, device_address \n\
 		FROM transactions JOIN user_addresses USING(device_address) \n\
-		WHERE transactions.currency = 'BTC' AND refunded = 0 AND stable = 1",
+		WHERE transactions.currency = 'BTC' AND refunded = 0 AND stable = 1 AND user_addresses.platform='BITCOIN'",
 		rows => {
 			if (!rows.length) {
 				console.error('==== BTC nothing to refund');
