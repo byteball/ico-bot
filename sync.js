@@ -1,9 +1,9 @@
 /*jslint node: true */
 'use strict';
-const conf = require('byteballcore/conf');
-const db = require('byteballcore/db');
-const eventBus = require('byteballcore/event_bus');
-const headlessWallet = require('headless-byteball');
+const conf = require('ocore/conf');
+const db = require('ocore/db');
+const eventBus = require('ocore/event_bus');
+const headlessWallet = require('headless-obyte');
 const texts = require('./texts');
 
 
@@ -11,12 +11,12 @@ headlessWallet.setupChatEventHandlers();
 
 
 eventBus.on('paired', from_address => {
-	let device = require('byteballcore/device.js');
+	let device = require('ocore/device.js');
 	device.sendMessageToDevice(from_address, 'text', "The bot is in maintenance mode, please check again later.");
 });
 
 eventBus.on('text', (from_address, text) => {
-	let device = require('byteballcore/device.js');
+	let device = require('ocore/device.js');
 	device.sendMessageToDevice(from_address, 'text', "The bot is in maintenance mode, please check again later.");
 });
 

@@ -1,11 +1,11 @@
 /*jslint node: true */
 'use strict';
 const fs = require('fs');
-const headlessWallet = require('headless-byteball');
-const conf = require('byteballcore/conf');
-const eventBus = require('byteballcore/event_bus.js');
-const db = require('byteballcore/db');
-const desktopApp = require('byteballcore/desktop_app.js');
+const headlessWallet = require('headless-obyte');
+const conf = require('ocore/conf');
+const eventBus = require('ocore/event_bus.js');
+const db = require('ocore/db');
+const desktopApp = require('ocore/desktop_app.js');
 
 const MIN_BALANCE = 3000;
 let myAddress = null;
@@ -63,8 +63,8 @@ function checkAndIssue(){
 }
 
 function defineAsset() {
-	const composer = require('byteballcore/composer.js');
-	const network = require('byteballcore/network');
+	const composer = require('ocore/composer.js');
+	const network = require('ocore/network');
 	let callbacks = composer.getSavingCallbacks({
 		ifNotEnoughFunds: onError,
 		ifError: onError,
@@ -80,8 +80,8 @@ function defineAsset() {
 }
 
 function issueAsset(){
-	const divisibleAsset = require('byteballcore/divisible_asset.js');
-	const network = require('byteballcore/network');
+	const divisibleAsset = require('ocore/divisible_asset.js');
+	const network = require('ocore/network');
 
 	divisibleAsset.composeAndSaveDivisibleAssetPaymentJoint({
 		asset: conf.issued_asset,

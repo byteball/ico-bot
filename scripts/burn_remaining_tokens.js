@@ -1,11 +1,11 @@
 /*jslint node: true */
 'use strict';
-const db = require('byteballcore/db');
-const headlessWallet = require('headless-byteball');
+const db = require('ocore/db');
+const headlessWallet = require('headless-obyte');
 const notifications = require('../modules/notifications');
-const eventBus = require('byteballcore/event_bus');
-const chash = require('byteballcore/chash');
-const conf = require('byteballcore/conf');
+const eventBus = require('ocore/event_bus');
+const chash = require('ocore/chash');
+const conf = require('ocore/conf');
 
 const BURN_ADDRESS = chash.getChash160('0');
 

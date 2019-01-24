@@ -1,8 +1,8 @@
 /*jslint node: true */
 'use strict';
-const eventBus = require('byteballcore/event_bus');
-const db = require('byteballcore/db.js');
-const conf = require('byteballcore/conf');
+const eventBus = require('ocore/event_bus');
+const db = require('ocore/db.js');
+const conf = require('ocore/conf');
 const Web3 = require('web3');
 let web3;
 let needRescan = false;
@@ -29,7 +29,7 @@ async function startScan(bCheckLast) {
 	if (!stopBlockNumber) stopBlockNumber = currentBlock - 2000;
 	if (stopBlockNumber <= 0) stopBlockNumber = 1;
 	console.error('start scan');
-	db.query("SELECT address AS byteball_address, receiving_address, device_address  \n\
+	db.query("SELECT address AS obyte_address, receiving_address, device_address  \n\
 			FROM receiving_addresses \n\
 			JOIN user_addresses USING(device_address) \n\
 			WHERE receiving_addresses.currency = 'ETH' AND user_addresses.platform = 'BYTEBALL'", async (rows) => {
@@ -50,7 +50,7 @@ async function startScan(bCheckLast) {
 							currency_amount: transaction.value / 1e18,
 							currency: 'ETH',
 							device_address: rowsByAddress[transaction.to].device_address,
-							byteball_address: rowsByAddress[transaction.to].byteball_address,
+							obyte_address: rowsByAddress[transaction.to].obyte_address,
 							receiving_address: rowsByAddress[transaction.to].receiving_address,
 							block_number: block.number
 						});
@@ -75,7 +75,7 @@ if (conf.ethEnabled) {
 						txid: row.txid,
 						currency_amount: row.currency_amount,
 						currency: 'ETH',
-						byteball_address: row.byteball_address,
+						obyte_address: row.byteball_address,
 						device_address: row.device_address,
 						receiving_address: row.receiving_address
 					});
@@ -105,7 +105,7 @@ if (conf.ethEnabled) {
 exports.startScan = startScan;
 
 exports.readOrAssignReceivingAddress = async (device_address, cb) => {
-	const mutex = require('byteballcore/mutex.js');
+	const mutex = require('ocore/mutex.js');
 	mutex.lock([device_address], unlock => {
 		db.query("SELECT receiving_address FROM receiving_addresses WHERE device_address=? AND currency='ETH'", [device_address], async (rows) => {
 			if (rows.length > 0) {

@@ -1,11 +1,11 @@
 /*jslint node: true */
 'use strict';
-const db = require('byteballcore/db');
-const eventBus = require('byteballcore/event_bus');
+const db = require('ocore/db');
+const eventBus = require('ocore/event_bus');
 
 function splitLargestOutput(asset, onDone){
 	console.error('will split largest output of asset '+asset);
-	const headlessWallet = require('headless-byteball');
+	const headlessWallet = require('headless-obyte');
 	createSplitOutputsAndAddress(asset, function(arrOutputs, address){
 		headlessWallet.sendPaymentUsingOutputs(asset, arrOutputs, address, (err, unit) => {
 			if (err)

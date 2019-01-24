@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
-const eventBus = require('byteballcore/event_bus');
-const conf = require('byteballcore/conf');
+const eventBus = require('ocore/event_bus');
+const conf = require('ocore/conf');
 const split = require('../modules/split.js');
 
 if (!conf.issued_asset)

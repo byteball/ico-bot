@@ -94,7 +94,7 @@ let table = new Table({
 				format: (val, row) => {
 					switch (row.currency) {
 						case 'GBYTE':
-							return `<a href="https://explorer.byteball.org/#${val}" target="_blank">${val}</a>`;
+							return `<a href="https://explorer.obyte.org/#${val}" target="_blank">${val}</a>`;
 						case 'BTC':
 							return `<a href="https://blockchain.info/tx/${val}" target="_blank">${val}</a>`;
 						case 'ETH':

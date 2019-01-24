@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const moment = require('moment');
-const conf = require('byteballcore/conf');
-const db = require('byteballcore/db');
+const conf = require('ocore/conf');
+const db = require('ocore/db');
 const log = require('./../libs/logger')(module);
 const { query: checkQuery, validationResult, oneOf } = require('express-validator/check');
 const { matchedData, sanitize } = require('express-validator/filter');

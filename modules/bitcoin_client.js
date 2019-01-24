@@ -1,8 +1,8 @@
 /*jslint node: true */
 'use strict';
 var bitcoin = require('bitcoin');
-var constants = require('byteballcore/constants.js');
-var conf = require('byteballcore/conf.js');
+var constants = require('ocore/constants.js');
+var conf = require('ocore/conf.js');
 
 var bTestnet = constants.version.match(/t$/);
 

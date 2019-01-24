@@ -1,8 +1,8 @@
 const http = require('http');
 const https = require('https');
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 const fs = require('fs');
-const desktopApp = require('byteballcore/desktop_app.js');
+const desktopApp = require('ocore/desktop_app.js');
 
 const app = require('./app');
 let server;

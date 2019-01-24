@@ -2,7 +2,7 @@
 'use strict';
 const async = require('async');
 const request = require('request');
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 const notifications = require('./notifications');
 
 let displayTokensMultiplier = Math.pow(10, conf.tokenDisplayDecimals);

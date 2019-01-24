@@ -3,7 +3,7 @@ const express = require('express');
 const routes = require('./routes/index');
 const morgan = require('./mw/morgan');
 const cors = require('./mw/cors');
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 
 const app = express();
 module.exports = app;

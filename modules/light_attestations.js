@@ -1,6 +1,6 @@
 /*jslint node: true */
 'use strict';
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 
 const REFRESH_TIMEOUT = 300*1000;
 let assocQueryTimestamps = {};
@@ -13,7 +13,7 @@ function updateAttestationsInLight(address){
 			console.log('attestations of address '+address+' updated recently');
 			return resolve();
 		}
-		const network = require('byteballcore/network.js');
+		const network = require('ocore/network.js');
 		network.requestFromLightVendor('light/get_attestations', {address: address}, (ws, request, response) => {
 			if (response.error){
 				console.log('light/get_attestations failed: '+response.error);

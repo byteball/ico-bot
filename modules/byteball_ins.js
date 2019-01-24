@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
-const eventBus = require('byteballcore/event_bus');
-const db = require('byteballcore/db.js');
+const eventBus = require('ocore/event_bus');
+const db = require('ocore/db.js');
 
 var main_address;
 
@@ -18,7 +18,7 @@ function readMainAddress(onDone){
 
 eventBus.on('my_transactions_became_stable', arrUnits => {
 	db.query(
-		"SELECT user_addresses.address as byteball_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
+		"SELECT user_addresses.address AS obyte_address, receiving_address, outputs.asset, outputs.amount, device_address, unit \n\
 		FROM outputs \n\
 		JOIN receiving_addresses ON receiving_addresses.receiving_address = outputs.address \n\
 		JOIN user_addresses USING(device_address) \n\
@@ -33,7 +33,7 @@ eventBus.on('my_transactions_became_stable', arrUnits => {
 			 		txid: row.unit,
 					currency_amount: row.amount/1e9,
 					currency: 'GBYTE',
-					byteball_address: row.byteball_address,
+					obyte_address: row.obyte_address,
 					device_address: row.device_address,
 					receiving_address: row.receiving_address
 				});
@@ -55,7 +55,7 @@ eventBus.on('my_transactions_became_stable', arrUnits => {
 						txid: row.unit,
 						currency_amount: row.amount/1e9,
 						currency: 'GBYTE',
-						byteball_address: row.author_address,
+						obyte_address: row.author_address,
 						device_address: null,
 						receiving_address: main_address
 					});
@@ -66,7 +66,7 @@ eventBus.on('my_transactions_became_stable', arrUnits => {
 });
 
 eventBus.on('new_my_transactions', (arrUnits) => {
-	let device = require('byteballcore/device.js');
+	let device = require('ocore/device.js');
 	db.query(
 		"SELECT outputs.amount, outputs.asset AS received_asset, device_address \n\
 		FROM outputs JOIN receiving_addresses ON outputs.address=receiving_addresses.receiving_address \n\
@@ -87,14 +87,14 @@ eventBus.on('new_my_transactions', (arrUnits) => {
 });
 
 exports.readOrAssignReceivingAddress = (device_address, cb) => {
-	const mutex = require('byteballcore/mutex.js');
+	const mutex = require('ocore/mutex.js');
 	mutex.lock([device_address], unlock => {
 		db.query("SELECT receiving_address FROM receiving_addresses WHERE device_address=? AND currency='GBYTE'", [device_address], rows => {
 			if (rows.length > 0){
 				cb(rows[0].receiving_address);
 				return unlock();
 			}
-			const headlessWallet = require('headless-byteball');
+			const headlessWallet = require('headless-obyte');
 			headlessWallet.issueNextMainAddress(receiving_address => {
 				db.query(
 					"INSERT INTO receiving_addresses (receiving_address, currency, device_address) VALUES(?,?,?)",

@@ -1,7 +1,7 @@
 /*jslint node: true */
 'use strict';
-const desktopApp = require('byteballcore/desktop_app.js');
-const conf = require('byteballcore/conf.js');
+const desktopApp = require('ocore/desktop_app.js');
+const conf = require('ocore/conf.js');
 
 const displayTokensMultiplier = Math.pow(10, conf.tokenDisplayDecimals);
 

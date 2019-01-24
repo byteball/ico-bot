@@ -1,12 +1,12 @@
 /*jslint node: true */
 'use strict';
-const db = require('byteballcore/db');
-const eventBus = require('byteballcore/event_bus');
+const db = require('ocore/db');
+const eventBus = require('ocore/event_bus');
 const async = require('async');
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 const Web3 = require('web3');
 const bitcoinClient = require('../modules/bitcoin_client.js');
-const headlessWallet = require('headless-byteball');
+const headlessWallet = require('headless-obyte');
 
 const MAX_BTC_OUTPUTS_PER_PAYMENT_MESSAGE = 100;
 
@@ -18,7 +18,7 @@ let change_address;
 function run() {
 	async.series([readStaticChangeAddress, refundBytes], (err) => {
 		if (err) return console.error(err);
-		console.error('==== Byteball Finished');
+		console.error('==== Obyte Finished');
 	});
 
 	if (conf.ethEnabled) {
@@ -30,7 +30,7 @@ function run() {
 
 
 function readStaticChangeAddress(onDone) {
-	const headlessWallet = require('headless-byteball');
+	const headlessWallet = require('headless-obyte');
 	headlessWallet.issueOrSelectStaticChangeAddress(address => {
 		change_address = address;
 		onDone();
@@ -38,8 +38,8 @@ function readStaticChangeAddress(onDone) {
 }
 
 function refundBytes(onDone) {
-	const headlessWallet = require('headless-byteball');
-	const walletGeneral = require('byteballcore/wallet_general.js');
+	const headlessWallet = require('headless-obyte');
+	const walletGeneral = require('ocore/wallet_general.js');
 	db.query(
 		"SELECT transaction_id, currency, device_address, currency_amount, byteball_address \n\
 		FROM transactions \n\
@@ -85,7 +85,7 @@ function refundBytes(onDone) {
 }
 
 function refundEther() {
-	const device = require('byteballcore/device.js');
+	const device = require('ocore/device.js');
 	return new Promise((resolve, reject) => {
 		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 AND user_addresses.platform='ETEREUM' GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
@@ -119,7 +119,7 @@ function refundEther() {
 }
 
 function refundBtc(onDone) {
-	const device = require('byteballcore/device.js');
+	const device = require('ocore/device.js');
 	db.query(
 		"SELECT transaction_id, currency_amount, user_addresses.address, device_address \n\
 		FROM transactions JOIN user_addresses USING(device_address) \n\

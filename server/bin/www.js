@@ -1,4 +1,4 @@
-const conf = require('byteballcore/conf');
+const conf = require('ocore/conf');
 const conversion = require('./../../modules/conversion.js');
 const log = require('../libs/logger')(module);
 const appPort = conf.webPort;

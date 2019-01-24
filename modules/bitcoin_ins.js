@@ -2,11 +2,11 @@
 'use strict';
 const fs = require('fs');
 const _ = require('lodash');
-const eventBus = require('byteballcore/event_bus');
-const db = require('byteballcore/db.js');
-const conf = require('byteballcore/conf');
+const eventBus = require('ocore/event_bus');
+const db = require('ocore/db.js');
+const conf = require('ocore/conf');
 const bitcoinClient = require('./bitcoin_client.js');
-const desktopApp = require('byteballcore/desktop_app.js');
+const desktopApp = require('ocore/desktop_app.js');
 
 const appDataDir = desktopApp.getAppDataDir();
 const LAST_BLOCK_HASH_FILENAME = appDataDir + '/' + (conf.LAST_BLOCK_HASH_FILENAME || 'last_bitcoin_block_hash');
@@ -74,7 +74,7 @@ function checkForNewTransactions(){
 					return;
 				assocKnownTxIds[tx.txid] = true;
 				db.query(
-					"SELECT address AS byteball_address, receiving_address, device_address \n\
+					"SELECT address AS obyte_address, receiving_address, device_address \n\
 					FROM receiving_addresses \n\
 					JOIN user_addresses USING(device_address) \n\
 					WHERE receiving_address = ? AND receiving_addresses.currency='BTC' AND user_addresses.platform='BYTEBALL'",
@@ -90,7 +90,7 @@ function checkForNewTransactions(){
 							currency_amount: tx.amount,
 							currency: 'BTC',
 							device_address: tx_row.device_address,
-							byteball_address: tx_row.byteball_address,
+							obyte_address: tx_row.obyte_address,
 							receiving_address: tx_row.receiving_address
 						});
 					}
@@ -114,7 +114,7 @@ function checkUnconfirmedTransactions(){
 					txid: row.txid,
 					currency_amount: row.currency_amount,
 					currency: 'BTC',
-					byteball_address: row.byteball_address,
+					obyte_address: row.byteball_address,
 					device_address: row.device_address,
 					receiving_address: row.receiving_address
 				});
@@ -160,7 +160,7 @@ if (conf.btcEnabled) {
 }
 
 exports.readOrAssignReceivingAddress = async (device_address, cb) => {
-	const mutex = require('byteballcore/mutex.js');
+	const mutex = require('ocore/mutex.js');
 	mutex.lock([device_address], unlock => {
 		db.query("SELECT receiving_address FROM receiving_addresses WHERE device_address=? AND currency='BTC'", [device_address], async (rows) => {
 			if (rows.length > 0) {

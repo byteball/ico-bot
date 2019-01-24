@@ -1,9 +1,9 @@
 /*jslint node: true */
 'use strict';
-const constants = require('byteballcore/constants.js');
-const db = require('byteballcore/db');
-const eventBus = require('byteballcore/event_bus');
-const conf = require('byteballcore/conf');
+const constants = require('ocore/constants.js');
+const db = require('ocore/db');
+const eventBus = require('ocore/event_bus');
+const conf = require('ocore/conf');
 const async = require('async');
 const conversion = require('../modules/conversion.js');
 
@@ -19,7 +19,7 @@ function run(){
 }
 
 function readStaticChangeAddress(onDone){
-	const headlessWallet = require('headless-byteball');
+	const headlessWallet = require('headless-obyte');
 	headlessWallet.issueOrSelectStaticChangeAddress(address => {
 		change_address = address;
 		onDone();
@@ -43,8 +43,8 @@ function calcTokens(onDone){
 }
 
 function runOneTimeDistribution(onDone) {
-	const headlessWallet = require('headless-byteball');
-	const walletGeneral = require('byteballcore/wallet_general.js');
+	const headlessWallet = require('headless-obyte');
+	const walletGeneral = require('ocore/wallet_general.js');
 	db.query(
 		"SELECT transaction_id, currency, device_address, currency_amount, tokens, byteball_address \n\
 		FROM transactions \n\

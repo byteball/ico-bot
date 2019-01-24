@@ -2,13 +2,13 @@
 'use strict';
 const _ = require('lodash');
 const moment = require('moment');
-const constants = require('byteballcore/constants.js');
-const conf = require('byteballcore/conf');
-const db = require('byteballcore/db');
-const eventBus = require('byteballcore/event_bus');
+const constants = require('ocore/constants.js');
+const conf = require('ocore/conf');
+const db = require('ocore/db');
+const eventBus = require('ocore/event_bus');
 const texts = require('./texts');
-const validationUtils = require('byteballcore/validation_utils');
-const privateProfile = require('byteballcore/private_profile.js');
+const validationUtils = require('ocore/validation_utils');
+const privateProfile = require('ocore/private_profile.js');
 const notifications = require('./modules/notifications');
 const byteball_ins = require('./modules/byteball_ins');
 const ethereum_ins = require('./modules/ethereum_ins');
@@ -22,7 +22,7 @@ const BigNumber = require('bignumber.js');
 const bitcore = require('bitcore-lib');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const desktopApp = require('byteballcore/desktop_app.js');
+const desktopApp = require('ocore/desktop_app.js');
 
 let web3;
 
@@ -42,16 +42,16 @@ if (conf.ethEnabled) {
 conversion.enableRateUpdates();
 
 function sendTokensToUser(objPayment) {
-	const mutex = require('byteballcore/mutex');
+	const mutex = require('ocore/mutex');
 	mutex.lock(['tx-' + objPayment.transaction_id], unlock => {
 		db.query("SELECT paid_out FROM transactions WHERE transaction_id=?", [objPayment.transaction_id], rows => {
 			if (rows.length === 0)
 				throw Error('tx ' + objPayment.transaction_id + ' not found');
 			if (rows[0].paid_out)
 				return unlock();
-			const headlessWallet = require('headless-byteball');
+			const headlessWallet = require('headless-obyte');
 			headlessWallet.issueChangeAddressAndSendPayment(
-				conf.issued_asset, objPayment.tokens, objPayment.byteball_address, objPayment.device_address,
+				conf.issued_asset, objPayment.tokens, objPayment.byteball_address || objPayment.obyte_address, objPayment.device_address,
 				(err, unit) => {
 					if (err) {
 						notifications.notifyAdmin('sendTokensToUser ICO failed', err + "\n\n" + JSON.stringify(objPayment, null, '\t'));
@@ -81,8 +81,8 @@ function updatePricesInConf(){
 	});
 }
 
-async function convertCurrencyToTokensWithDiscount(byteball_address, amount, currency){
-	let objDiscount = await discounts.getDiscount(byteball_address);
+async function convertCurrencyToTokensWithDiscount(obyte_address, amount, currency){
+	let objDiscount = await discounts.getDiscount(obyte_address);
 	let tokens = conversion.convertCurrencyToTokens(amount, currency);
 	tokens = Math.round(tokens / (1-objDiscount.discount/100));
 	let objTokensWithDiscount = objDiscount;
@@ -91,10 +91,10 @@ async function convertCurrencyToTokensWithDiscount(byteball_address, amount, cur
 }
 
 eventBus.on('paired', from_address => {
-	let device = require('byteballcore/device.js');
+	let device = require('ocore/device.js');
 	var text = texts.greeting();
-	checkUserAdress(from_address, 'BYTEBALL', bByteballAddressKnown => {
-		if (bByteballAddressKnown)
+	checkUserAdress(from_address, 'BYTEBALL', obyte_address => {
+		if (obyte_address)
 			text += "\n\n" + texts.howmany();
 		else
 			text += "\n\n" + texts.insertMyAddress();
@@ -103,10 +103,10 @@ eventBus.on('paired', from_address => {
 });
 
 eventBus.once('headless_and_rates_ready', () => {
-	const headlessWallet = require('headless-byteball');
+	const headlessWallet = require('headless-obyte');
 	headlessWallet.setupChatEventHandlers();
 	eventBus.on('text', (from_address, text) => {
-		let device = require('byteballcore/device');
+		let device = require('ocore/device');
 		text = text.trim();
 		let ucText = text.toUpperCase();
 		let lcText = text.toLowerCase();
@@ -134,17 +134,17 @@ eventBus.once('headless_and_rates_ready', () => {
 
 		let arrProfileMatches = text.match(/\(profile:(.+?)\)/);
 		
-		checkUserAdress(from_address, 'BYTEBALL', async (byteball_address) => {
-			if (!byteball_address && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
+		checkUserAdress(from_address, 'BYTEBALL', async (obyte_address) => {
+			if (!obyte_address && !validationUtils.isValidAddress(ucText) && !arrProfileMatches)
 				return device.sendMessageToDevice(from_address, 'text', texts.insertMyAddress());
 			
 			async function handleUserAddress(address, bWithData){
-				function saveByteballAddress(){
+				function saveObyteAddress(){
 					db.query(
 						'INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', 
 						[from_address, 'BYTEBALL', address], 
 						async () => {
-							device.sendMessageToDevice(from_address, 'text', 'Saved your Byteball address'+(bWithData ? ' and personal data' : '')+'.\n\n' + texts.howmany());
+							device.sendMessageToDevice(from_address, 'text', 'Saved your Obyte address'+(bWithData ? ' and personal data' : '')+'.\n\n' + texts.howmany());
 							let objDiscount = await discounts.getDiscount(address);
 							if (objDiscount.discount)
 								device.sendMessageToDevice(from_address, 'text', texts.discount(objDiscount));
@@ -163,7 +163,7 @@ eventBus.once('headless_and_rates_ready', () => {
 						rows => {
 							if (rows.length === 0)
 								return device.sendMessageToDevice(from_address, 'text', 'This token is available only to non-US citizens and residents but the address you provided is not attested as belonging to a non-US user.  If you are a non-US user and have already attested another address, please use the attested address.  If you are a non-US user and didn\'t attest yet, find "Real name attestation bot" in the Bot Store and have your address attested.');
-							saveByteballAddress();
+							saveObyteAddress();
 						}
 					);
 				}
@@ -175,17 +175,17 @@ eventBus.once('headless_and_rates_ready', () => {
 						rows => {
 							if (rows.length === 0)
 								return device.sendMessageToDevice(from_address, 'text', 'This token is available only to accredited investors but the address you provided is not attested as belonging to an accredited investor.  If you are an accredited investor and have already attested another address, please use the attested address.  If you are an accredited investor and didn\'t attest yet, find "Accredited investor attestation bot" in the Bot Store and have your address attested.');
-							saveByteballAddress();
+							saveObyteAddress();
 						}
 					);
 				}
 				else
-					saveByteballAddress();
+					saveObyteAddress();
 			}
 			
 			if (validationUtils.isValidAddress(ucText)) {
 				if (conf.bRequireRealName)
-					return device.sendMessageToDevice(from_address, 'text', "You have to provide your attested profile, just Byteball address is not enough.");
+					return device.sendMessageToDevice(from_address, 'text', "You have to provide your attested profile, just Obyte address is not enough.");
 				return handleUserAddress(ucText);
 			}
 			else if (arrProfileMatches){
@@ -229,7 +229,7 @@ eventBus.once('headless_and_rates_ready', () => {
 					case 'GB':
 					case 'GBYTE':
 						let bytes = Math.round(amount * 1e9);
-						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(byteball_address, amount, 'GBYTE');
+						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(obyte_address, amount, 'GBYTE');
 						tokens = objTokensWithDiscount.tokens;
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
@@ -246,7 +246,7 @@ eventBus.once('headless_and_rates_ready', () => {
 						currency = 'ETH';
 					case 'ETH':
 					case 'BTC':
-						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(byteball_address, amount, currency);
+						objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(obyte_address, amount, currency);
 						tokens = objTokensWithDiscount.tokens;
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
@@ -271,7 +271,7 @@ eventBus.once('headless_and_rates_ready', () => {
 			}
 
 			let response = texts.greeting();
-			if (byteball_address)
+			if (obyte_address)
 				response += "\n\n" + texts.howmany();
 			else
 				response += "\n\n" + texts.insertMyAddress();
@@ -281,7 +281,7 @@ eventBus.once('headless_and_rates_ready', () => {
 });
 
 function checkAndPayNotPaidTransactions() {
-	let network = require('byteballcore/network.js');
+	let network = require('ocore/network.js');
 	if (network.isCatchingUp())
 		return;
 	console.log('checkAndPayNotPaidTransactions');
@@ -313,8 +313,8 @@ function checkUserAdress(device_address, platform, cb) {
 // send collected bytes to the accumulation address
 function sendMeBytes() {
 	if (!conf.accumulationAddresses.GBYTE || !conf.minBalance)
-		return console.log('Byteball no accumulation settings');
-	let network = require('byteballcore/network.js');
+		return console.log('Obyte no accumulation settings');
+	let network = require('ocore/network.js');
 	if (network.isCatchingUp())
 		return console.log('still catching up, will not accumulate');
 	console.log('will accumulate');
@@ -328,7 +328,7 @@ function sendMeBytes() {
 			let amount = rows.reduce((sum, row) => sum + row.amount, 0) - conf.minBalance;
 			if (amount < 1000) // including negative
 				return console.log("nothing to accumulate");
-			const headlessWallet = require('headless-byteball');
+			const headlessWallet = require('headless-obyte');
 			headlessWallet.issueChangeAddressAndSendPayment(null, amount, conf.accumulationAddresses.GBYTE, conf.accumulationDeviceAddress, (err, unit) => {
 				if (err)
 					return notifications.notifyAdmin('accumulation failed', err);
@@ -413,8 +413,8 @@ function getPlatformByCurrency(currency) {
 }
 
 eventBus.on('in_transaction_stable', tx => {
-	let device = require('byteballcore/device');
-	const mutex = require('byteballcore/mutex');
+	let device = require('ocore/device');
+	const mutex = require('ocore/mutex');
 	mutex.lock(['tx-' + tx.txid], unlock => {
 		db.query("SELECT stable FROM transactions WHERE txid = ? AND receiving_address=?", [tx.txid, tx.receiving_address], async (rows) => {
 			if (rows.length > 1)
@@ -426,7 +426,7 @@ eventBus.on('in_transaction_stable', tx => {
 				db.query(
 					"INSERT " + orReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
 					VALUES(?, ?,?, ?,?,?,?, 1)",
-					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null],
+					[tx.txid, tx.receiving_address, tx.currency, tx.obyte_address, tx.device_address, tx.currency_amount, null],
 					() => {
 						unlock();
 						if (tx.device_address)
@@ -435,7 +435,7 @@ eventBus.on('in_transaction_stable', tx => {
 				);
 			}
 			else {
-				let objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(tx.byteball_address, tx.currency_amount, tx.currency); // might throw if called before the rates are ready
+				let objTokensWithDiscount = await convertCurrencyToTokensWithDiscount(tx.obyte_address, tx.currency_amount, tx.currency); // might throw if called before the rates are ready
 				let tokens = objTokensWithDiscount.tokens;
 				if (tokens === 0) {
 					unlock();
@@ -446,7 +446,7 @@ eventBus.on('in_transaction_stable', tx => {
 				db.query(
 					"INSERT " + orReplace + " INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, stable) \n\
 					VALUES(?, ?,?, ?,?,?,?, 1)",
-					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, tokens],
+					[tx.txid, tx.receiving_address, tx.currency, tx.obyte_address, tx.device_address, tx.currency_amount, tokens],
 					(res) => {
 						unlock();
 						tx.transaction_id = res.insertId;
@@ -470,7 +470,7 @@ eventBus.on('in_transaction_stable', tx => {
 });
 
 eventBus.on('new_in_transaction', tx => {
-	let device = require('byteballcore/device.js');
+	let device = require('ocore/device.js');
 	if (tx.currency === 'ETH' || tx.currency === 'BTC') {
 		let platform = getPlatformByCurrency(tx.currency);
 		checkUserAdress(tx.device_address, platform, bAddressKnown => {
@@ -483,7 +483,7 @@ eventBus.on('new_in_transaction', tx => {
 				db.query(
 					"INSERT INTO transactions (txid, receiving_address, currency, byteball_address, device_address, currency_amount, tokens, block_number) \n\
 					VALUES(?, ?,?, ?,?,?,?,?)",
-					[tx.txid, tx.receiving_address, tx.currency, tx.byteball_address, tx.device_address, tx.currency_amount, null, blockNumber], () => {
+					[tx.txid, tx.receiving_address, tx.currency, tx.obyte_address, tx.device_address, tx.currency_amount, null, blockNumber], () => {
 						device.sendMessageToDevice(tx.device_address, 'text', "Received your payment of " + tx.currency_amount + " " + tx.currency + ", waiting for confirmation.");
 						if (!bAddressKnown && conf.bRefundPossible)
 							device.sendMessageToDevice(tx.device_address, 'text', texts.sendAddressForRefund(platform));

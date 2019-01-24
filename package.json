@@ -1,7 +1,7 @@
 {
   "name": "ico-bot",
   "version": "1.0.0",
-  "description": "A bot for running ICO on Byteball platform",
+  "description": "A bot for running ICO on Obyte platform",
   "main": "ico.js",
   "scripts": {
     "postinstall": "./node_modules/.bin/bower install",
@@ -19,9 +19,9 @@
     "bignumber.js": "^5.0.0",
     "bitcoin": "^3.0.1",
     "bitcore-lib": "^0.13.14",
-    "byteballcore": "git+https://github.com/byteball/byteballcore.git",
+    "ocore": "git+https://github.com/byteball/ocore.git",
     "emailjs": "^1.0.10",
-    "headless-byteball": "git+https://github.com/byteball/headless-byteball.git",
+    "headless-obyte": "git+https://github.com/byteball/headless-obyte.git",
     "lodash": "^4.6.1",
     "moment": "^2.18.1",
     "next": "^4.0.0-beta.6",
