@@ -10,7 +10,7 @@ const texts = require('./texts');
 const validationUtils = require('ocore/validation_utils');
 const privateProfile = require('ocore/private_profile.js');
 const notifications = require('./modules/notifications');
-const byteball_ins = require('./modules/byteball_ins');
+const obyte_ins = require('./modules/obyte_ins');
 const ethereum_ins = require('./modules/ethereum_ins');
 const bitcoin_ins = require('./modules/bitcoin_ins');
 const bitcoinClient = require('./modules/bitcoin_client.js');
@@ -234,7 +234,7 @@ eventBus.once('headless_and_rates_ready', () => {
 						if (tokens === 0)
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
 						display_tokens = tokens / conversion.displayTokensMultiplier;
-						byteball_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
+						obyte_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
 							let response = 'You buy: ' + display_tokens + ' ' + conf.tokenName +
 								'\n[' + ucText + '](byteball:' + receiving_address + '?amount=' + bytes + ')';
 							if (objTokensWithDiscount.discount)
