@@ -35,7 +35,7 @@ Edit `conf.js` or `conf.json` to describe the properties of your token and token
 * `startDate` and `endDate`: start and end dates of the crowdsale.
 * `accumulationAddresses`: all collected funds are periodically swept to these addresses (one address per currency), it is recommended that these addresses are better secured by being multisig or offline.
 * `arrAdminAddresses`: array of device addresses of admins.  Only admins can change the price of your token by giving commands to the bot in chat interface (see below).  If you don't want to change the price via chat, leave this field empty.
-* `socksHost` and `socksPort`: configure your bot to use TOR, so rest of the network won't know your real IP. Also, configure Cloudflare to access the real IP, HTTPS and caching.
+* `socksHost` and `socksPort`: for better security, it is recommended to configure your bot to use TOR, so the rest of the network won't know your real IP.  If you enable the [web server](#web-server), it is recommended to run it through a reverse proxy such as Cloudflare in order not to expose your IP address.
 
 Chat with the bot, learn its address and pay a small amount (at least 10000 bytes) to fund asset issuance.  You’ll see the balance only when it is fully synced.
 

@@ -61,9 +61,9 @@ exports.btcMinConfirmations = 2;
 
 exports.tokenName = 'ICOTKN';
 exports.issued_asset = null; // will be written to conf.json by scripts/issue_tokens.js
-exports.startDate = '02.12.2017 13:00'; //dd.mm.yyyy
-exports.endDate = '30.12.2017 13:00'; //dd.mm.yyyy
-exports.totalTokens = 1000000; // number of smallest units
+exports.startDate = '02.12.2017 13:00'; //dd.mm.yyyy UTC
+exports.endDate = '30.12.2019 13:00'; //dd.mm.yyyy UTC
+exports.totalTokens = 1000000; // number of smallest units.  The number of display units is 10 ^ tokenDisplayDecimals times less
 // https://developer.obyte.org/issuing-assets-on-byteball
 exports.asset_definition = {
 	cap: exports.totalTokens, // totalTokens can be rewritten in conf.json
@@ -76,7 +76,7 @@ exports.asset_definition = {
 	spender_attested: false
 };
 
-exports.tokenDisplayDecimals = 0; // total supply = totalTokens / 10 ^ tokenDisplayDecimals
+exports.tokenDisplayDecimals = 0; // total supply in display units = totalTokens / 10 ^ tokenDisplayDecimals
 
 exports.rulesOfDistributionOfTokens = 'real-time'; // real-time OR one-time
 //exports.rulesOfDistributionOfTokens = 'one-time'; // real-time OR one-time
