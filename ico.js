@@ -209,17 +209,19 @@ eventBus.once('headless_and_rates_ready', () => {
 				});
 				return;
 			}
-			else if (Web3.utils.isAddress(lcText)) {
+			else if (conf.ethEnabled && web3 && web3.utils.isAddress(lcText)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'ETHEREUM', lcText], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Ethereum address.');
 				});
 				return;
-			} else if (bitcore.Address.isValid(text, bitcoinNetwork)) {
+			}
+			else if (conf.btcEnabled && bitcore.Address.isValid(text, bitcoinNetwork)) {
 				db.query('INSERT OR REPLACE INTO user_addresses (device_address, platform, address) VALUES(?,?,?)', [from_address, 'BITCOIN', text], () => {
 					device.sendMessageToDevice(from_address, 'text', 'Saved your Bitcoin address.');
 				});
 				return;
-			} else if (/^[0-9.]+[\sA-Z]+$/.test(ucText)) {
+			}
+			else if (/^[0-9.]+[\sA-Z]+$/.test(ucText)) {
 				let amount = parseFloat(ucText.match(/^([0-9.]+)[\sA-Z]+$/)[1]);
 				let currency = ucText.match(/[A-Z]+$/)[0];
 				if (amount < 0.000000001)
@@ -252,14 +254,16 @@ eventBus.once('headless_and_rates_ready', () => {
 							return device.sendMessageToDevice(from_address, 'text', 'The amount is too small');
 						display_tokens = tokens / conversion.displayTokensMultiplier;
 						let currency_ins = (currency === 'BTC') ? bitcoin_ins : ethereum_ins;
-						currency_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
-							let response = 'You buy: ' + display_tokens + ' ' + conf.tokenName + '.' +
-								'\nPlease send ' + amount + ' ' + currency + ' to ' + receiving_address;
-							if (objTokensWithDiscount.discount)
-								response += "\n\n"+texts.includesDiscount(objTokensWithDiscount);
-							device.sendMessageToDevice(from_address, 'text', response);
-						})
-						break;
+						if ( (conf.ethEnabled && currency === 'ETH') || (conf.btcEnabled && currency === 'BTC') ) {
+							currency_ins.readOrAssignReceivingAddress(from_address, receiving_address => {
+								let response = 'You buy: ' + display_tokens + ' ' + conf.tokenName + '.' +
+									'\nPlease send ' + amount + ' ' + currency + ' to ' + receiving_address;
+								if (objTokensWithDiscount.discount)
+									response += "\n\n"+texts.includesDiscount(objTokensWithDiscount);
+								device.sendMessageToDevice(from_address, 'text', response);
+							});
+							break;
+						}
 					case 'USDT':
 						device.sendMessageToDevice(from_address, 'text', currency + ' not implemented yet');
 						break;
@@ -501,8 +505,6 @@ eventBus.on('headless_wallet_ready', () => {
 	let arrTableNames = ['user_addresses', 'receiving_addresses', 'transactions'];
 	db.query("SELECT name FROM sqlite_master WHERE type='table' AND name IN (?)", [arrTableNames], (rows) => {
 		if (rows.length !== arrTableNames.length) error += texts.errorInitSql();
-
-		if (conf.useSmtp && (!conf.smtpUser || !conf.smtpPassword || !conf.smtpHost)) error += texts.errorSmtp();
 
 		if (!conf.admin_email || !conf.from_email) error += texts.errorEmail();
 

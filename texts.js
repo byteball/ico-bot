@@ -52,7 +52,11 @@ exports.greeting = () => {
 };
 
 exports.howmany = () => {
-	return 'How much and what currency are you willing to invest?\nFor example: 1.5GB, or 2.5ETH, or 0.5BTC';
+	let text = 'How much and what currency are you willing to invest?';
+	text += "\n" + '* [10 GB](suggest-command:10 GBYTE)';
+	text += conf.ethEnabled ? "\n" + '* [2.5 ETH](suggest-command:2.5 ETH)' : '';
+	text += conf.btcEnabled ? "\n" + '* [0.5 BTC](suggest-command:0.5 BTC)' : '';
+	return text;
 };
 
 exports.insertMyAddress = () => {
@@ -80,10 +84,6 @@ exports.sendAddressForRefund = (platform) => {
 //errors
 exports.errorInitSql = () => {
 	return 'please import ico.sql file\n';
-};
-
-exports.errorSmtp = () => {
-	return `please specify smtpUser, smtpPassword and smtpHost in your ${desktopApp.getAppDataDir()}/conf.json\n`;
 };
 
 exports.errorEmail = () => {

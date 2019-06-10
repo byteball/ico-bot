@@ -12,7 +12,7 @@ var GBYTE_BTC_rate;
 var ETH_BTC_rate;
 var ETH_USD_rate;
 var BTC_USD_rate;
-var EUR_USD_rate = 1.16;
+var EUR_USD_rate = 1.134;
 var GBP_USD_rate;
 var USD_JPY_rate;
 var USD_RUR_rate;

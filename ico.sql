@@ -1,4 +1,4 @@
-CREATE TABLE receiving_addresses (
+CREATE TABLE IF NOT EXISTS receiving_addresses (
 	receiving_address VARCHAR(100) NOT NULL PRIMARY KEY,
 	currency VARCHAR(10) NOT NULL, -- GBYTE, ETH, BTC
 	device_address CHAR(33) NOT NULL,
@@ -6,8 +6,8 @@ CREATE TABLE receiving_addresses (
 	UNIQUE (device_address, currency),
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
 );
-
-CREATE TABLE user_addresses (
+-- query separator
+CREATE TABLE IF NOT EXISTS user_addresses (
 	device_address CHAR(33) NOT NULL,
 	platform CHAR(50) NOT NULL, -- BYTEBALL, ETHEREUM, BITCOIN
 	address CHAR(100) NOT NULL,
@@ -15,8 +15,8 @@ CREATE TABLE user_addresses (
 	PRIMARY KEY(device_address,platform),
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address)
 );
-
-CREATE TABLE transactions (
+-- query separator
+CREATE TABLE IF NOT EXISTS transactions (
 	transaction_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 	txid VARCHAR(100) NOT NULL, -- id of receiving tx on the receiving currency
 	receiving_address VARCHAR(100) NOT NULL, -- our receiving address in input currency
@@ -37,16 +37,18 @@ CREATE TABLE transactions (
 	FOREIGN KEY (device_address) REFERENCES correspondent_devices(device_address),
 	FOREIGN KEY (payout_unit) REFERENCES units(unit)
 );
-CREATE INDEX txid_stable ON transactions (stable);
-CREATE UNIQUE INDEX txid_index ON transactions (txid, receiving_address);
+-- query separator
+CREATE INDEX IF NOT EXISTS txid_stable ON transactions (stable);
+-- query separator
+CREATE UNIQUE INDEX IF NOT EXISTS txid_index ON transactions (txid, receiving_address);
 
 /*
 upgrade:
 CREATE UNIQUE INDEX txid_index ON transactions (txid, receiving_address);
-CREATE INDEX txid_stable ON transactions (stable);
+CREATE INDEX IF NOT EXISTS txid_stable ON transactions (stable);
 ALTER TABLE transactions ADD COLUMN stable TINYINT DEFAULT 0;
 -- ALTER TABLE receiving_addresses ADD COLUMN creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
-CREATE TABLE user_addresses (
+CREATE TABLE IF NOT EXISTS user_addresses (
 	device_address CHAR(33) NOT NULL,
 	platform CHAR(50) NOT NULL,
 	address CHAR(100)  NULL,

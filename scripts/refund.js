@@ -7,11 +7,13 @@ const conf = require('ocore/conf');
 const Web3 = require('web3');
 const bitcoinClient = require('../modules/bitcoin_client.js');
 const headlessWallet = require('headless-obyte');
+let web3;
 
 const MAX_BTC_OUTPUTS_PER_PAYMENT_MESSAGE = 100;
 
-if(conf.ethEnabled)
-	const web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+if (conf.ethEnabled) {
+	web3 = new Web3(new Web3.providers.WebsocketProvider(conf.ethWSProvider));
+}
 
 let change_address;
 
@@ -87,7 +89,7 @@ function refundBytes(onDone) {
 function refundEther() {
 	const device = require('ocore/device.js');
 	return new Promise((resolve, reject) => {
-		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 AND user_addresses.platform='ETEREUM' GROUP BY receiving_address", async (rows) => {
+		db.query("SELECT transaction_id, SUM(currency_amount) AS currency_amount, user_addresses.address, receiving_address, device_address FROM transactions JOIN user_addresses USING(device_address) WHERE transactions.currency = 'ETH' AND refunded = 0 AND stable = 1 AND user_addresses.platform='ETHEREUM' GROUP BY receiving_address", async (rows) => {
 			if (!rows.length) {
 				console.error('==== ETH nothing to refund');
 				return resolve();
@@ -98,7 +100,7 @@ function refundEther() {
 				web3.eth.sendTransaction({
 					from: conf.ethRefundDistributionAddress,
 					to: row.address,
-					value: Web3.utils.toWei(row.currency_amount.toString(), 'ether'),
+					value: web3.utils.toWei(row.currency_amount.toString(), 'ether'),
 					gas: 21000
 				}, (err, txid) => {
 					if (err) return callback(err);

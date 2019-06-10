@@ -7,6 +7,8 @@ const eventBus = require('ocore/event_bus.js');
 const db = require('ocore/db');
 const desktopApp = require('ocore/desktop_app.js');
 
+headlessWallet.setupChatEventHandlers();
+
 const MIN_BALANCE = 3000;
 let myAddress = null;
 conf.asset_definition.cap = conf.totalTokens;

@@ -9,6 +9,8 @@ const conversion = require('./../../modules/conversion.js');
 
 const arrCurrencies = ['GBYTE', 'BTC', 'ETH', 'USDT'];
 
+conf.database.bReadOnly = true;
+
 router.get('/', (req, res) => {
 	res.status(200).json({
 		version: process.env.npm_package_version,

@@ -11,7 +11,7 @@ exports.storage = 'sqlite';
 exports.socksHost = '127.0.0.1';
 exports.socksPort = 9050;
 
-exports.hub = 'obyte.org/bb';
+exports.hub = process.env.testnet ? 'obyte.org/bb-test' : 'obyte.org/bb';
 exports.deviceName = 'ICO Bot';
 exports.permanent_pairing_secret = '0000';
 exports.control_addresses = [''];
@@ -22,10 +22,17 @@ exports.bSingleAddress = false;
 exports.bStaticChangeAddress = true;
 exports.KEYS_FILENAME = 'keys.json';
 
-//email
-exports.useSmtp = false;
+// email setup
 exports.admin_email = '';
 exports.from_email = '';
+
+// smtp https://github.com/byteball/ocore/blob/master/mail.js
+exports.smtpTransport = 'local'; // use 'local' for Unix Sendmail
+exports.smtpRelay = '';
+exports.smtpUser = '';
+exports.smtpPassword = '';
+exports.smtpSsl = null;
+exports.smtpPort = null;
 
 // accumulation settings: the bot will periodically forward all collected funds to accumulationAddress (which is supposed to have better security, e.g. multisig)
 exports.accumulationAddresses = {
@@ -37,7 +44,7 @@ exports.accumulationInterval = 1; // 1 hour
 exports.minBalance = 100000; //bytes
 
 // Ethereum
-exports.ethEnabled = true;
+exports.ethEnabled = false;
 exports.ethWSProvider = 'ws://localhost:8546';
 exports.ethPassword = 'test';
 exports.ethAccumulationInterval = 1; // 1 hour
@@ -45,7 +52,7 @@ exports.ethRefundDistributionAddress = '';
 exports.ethMinConfirmations = 20;
 
 // Bitcoin
-exports.btcEnabled = true;
+exports.btcEnabled = false;
 exports.btcRpcUser = 'bitcoin';
 exports.btcRpcPassword = 'local321';
 exports.btcAccumulationInterval = 1; // 1 hour
@@ -57,6 +64,7 @@ exports.issued_asset = null; // will be written to conf.json by scripts/issue_to
 exports.startDate = '02.12.2017 13:00'; //dd.mm.yyyy
 exports.endDate = '30.12.2017 13:00'; //dd.mm.yyyy
 exports.totalTokens = 1000000; // number of smallest units
+// https://developer.obyte.org/issuing-assets-on-byteball
 exports.asset_definition = {
 	cap: exports.totalTokens, // totalTokens can be rewritten in conf.json
 	is_private: false,
@@ -68,7 +76,7 @@ exports.asset_definition = {
 	spender_attested: false
 };
 
-exports.tokenDisplayDecimals = 2; // display token = 100 tokens
+exports.tokenDisplayDecimals = 0; // total supply = totalTokens / 10 ^ tokenDisplayDecimals
 
 exports.rulesOfDistributionOfTokens = 'real-time'; // real-time OR one-time
 //exports.rulesOfDistributionOfTokens = 'one-time'; // real-time OR one-time
@@ -125,8 +133,8 @@ exports.discounts = {
 exports.bRefundPossible = true;
 
 exports.bRequireRealName = false;
-exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT'];
-exports.arrRequiredPersonalData = ['first_name', 'last_name', 'country', 'dob', 'id_number', 'id_type'];
+exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT', 'OHVQ2R5B6TUR5U7WJNYLP3FIOSR7VCED'];
+exports.arrRequiredPersonalData = ['first_name', 'last_name', 'dob', 'country', 'id_type'];
 
 exports.bRequireNonUs = false;
 exports.arrNonUsAttestors = ['C4O37BFHR46UP6JJ4A5PA5RIZH5IFPZF'];
