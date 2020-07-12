@@ -133,7 +133,7 @@ exports.discounts = {
 exports.bRefundPossible = true;
 
 exports.bRequireRealName = false;
-exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT', 'OHVQ2R5B6TUR5U7WJNYLP3FIOSR7VCED'];
+exports.arrRealNameAttestors = ['I2ADHGP4HL6J37NQAD73J7E5SKFIXJOT', 'JFKWGRMXP3KHUAFMF4SJZVDXFL6ACC6P', 'OHVQ2R5B6TUR5U7WJNYLP3FIOSR7VCED'];
 exports.arrRequiredPersonalData = ['first_name', 'last_name', 'dob', 'country', 'id_type'];
 
 exports.bRequireNonUs = false;
